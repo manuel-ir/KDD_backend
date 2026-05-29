@@ -1,0 +1,7 @@
+# Repositorio frontend (submódulo independiente)
+KDD_frontend/
+
+# Archivos de imagen y documentación temporal
+*.png
+*.pdf
+NOTAS_INTERNAS.md

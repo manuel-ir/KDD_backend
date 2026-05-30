@@ -7,4 +7,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface PertenenciaComunidadRepository extends JpaRepository<PertenenciaComunidad, PertenenciaComunidadId> {
+    int countByIdComunidadId(Long comunidadId);
+    boolean existsByIdUsuarioIdAndIdComunidadId(Long usuarioId, Long comunidadId);
 }

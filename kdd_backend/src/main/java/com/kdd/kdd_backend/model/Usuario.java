@@ -37,6 +37,11 @@ public class Usuario {
     @Column(name = "es_invitado")
     private Boolean esInvitado;
 
+    @Column(columnDefinition = "TEXT")
+    private String descripcion;
+
+    private Integer edad;
+
     @PrePersist
     protected void onCreate() {
         fechaRegistro = LocalDateTime.now();

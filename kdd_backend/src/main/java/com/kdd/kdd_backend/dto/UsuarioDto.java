@@ -1,7 +1,6 @@
 package com.kdd.kdd_backend.dto;
 
 import lombok.*;
-import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
@@ -12,6 +11,6 @@ public class UsuarioDto {
     private String nombre;
     private String email;
     private String fotoPerfil;
-    private LocalDateTime fechaRegistro;
-    private Boolean esInvitado;
+    private String descripcion;
+    private Integer edad;
 }

@@ -88,6 +88,15 @@ public class PlanService {
             throw new RuntimeException("El plan está completo");
         }
 
+        if (usuario.getEdad() != null) {
+            if (plan.getEdadMin() != null && usuario.getEdad() < plan.getEdadMin()) {
+                throw new RuntimeException("No cumples la edad mínima para este plan");
+            }
+            if (plan.getEdadMax() != null && usuario.getEdad() > plan.getEdadMax()) {
+                throw new RuntimeException("Superas la edad máxima para este plan");
+            }
+        }
+
         Participacion participacion = new Participacion();
         participacion.setId(new ParticipacionId(userId, planId));
         participacion.setUsuario(usuario);

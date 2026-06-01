@@ -25,5 +25,5 @@ app:
     secret: KDD-SecretKey-Para-Token-JWT-2024-MuyLargoYSeguro-Minimo256BitsParaHS256
     expiration-ms: 86400000
   google:
-    api-key: AIzaSyDnIc1lQvaPuN9lfkJkuWJn3mC_ijYZxYo
+    api-key: ${GOOGLE_API_KEY:}
     client-id: 1045671394809-32or29g8gilr4gs2rm29j2o58u9mkujh.apps.googleusercontent.com

@@ -2,6 +2,7 @@ package com.kdd.kdd_backend.controller;
 
 import com.kdd.kdd_backend.dto.ComunidadDto;
 import com.kdd.kdd_backend.dto.CrearComunidadDto;
+import com.kdd.kdd_backend.dto.MiembroComunidadDto;
 import com.kdd.kdd_backend.service.ComunidadService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -23,8 +24,9 @@ public class ComunidadController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ComunidadDto> detalle(@PathVariable Long id) {
-        return ResponseEntity.ok(comunidadService.getDetalle(id));
+    public ResponseEntity<ComunidadDto> detalle(Authentication auth, @PathVariable Long id) {
+        Long userId = (Long) auth.getPrincipal();
+        return ResponseEntity.ok(comunidadService.getDetalle(id, userId));
     }
 
     @PostMapping
@@ -39,5 +41,17 @@ public class ComunidadController {
         Long userId = (Long) auth.getPrincipal();
         comunidadService.unirse(userId, id);
         return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/{id}/abandonar")
+    public ResponseEntity<Void> abandonar(Authentication auth, @PathVariable Long id) {
+        Long userId = (Long) auth.getPrincipal();
+        comunidadService.abandonar(userId, id);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{id}/miembros")
+    public ResponseEntity<List<MiembroComunidadDto>> miembros(@PathVariable Long id) {
+        return ResponseEntity.ok(comunidadService.getMiembros(id));
     }
 }

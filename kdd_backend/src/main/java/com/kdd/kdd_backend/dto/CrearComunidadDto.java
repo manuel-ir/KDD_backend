@@ -8,6 +8,7 @@ import lombok.*;
 public class CrearComunidadDto {
     private String nombre;
     private String descripcion;
+    private String ubicacion;
     private Integer edadMin;
     private Integer edadMax;
 }

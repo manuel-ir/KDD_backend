@@ -8,6 +8,6 @@ import lombok.*;
 public class EditarUsuarioDto {
     private String nombre;
     private String descripcion;
-    private Integer edad;
+    private String fechaNacimiento; // ISO YYYY-MM-DD
     private String fotoPerfil;
 }

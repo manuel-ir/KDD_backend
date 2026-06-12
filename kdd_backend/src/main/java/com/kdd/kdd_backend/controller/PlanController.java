@@ -29,8 +29,9 @@ public class PlanController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<PlanDto> detalle(@PathVariable Long id) {
-        return ResponseEntity.ok(planService.getDetalle(id));
+    public ResponseEntity<PlanDto> detalle(Authentication auth, @PathVariable Long id) {
+        Long userId = (Long) auth.getPrincipal();
+        return ResponseEntity.ok(planService.getDetalle(id, userId));
     }
 
     @PostMapping

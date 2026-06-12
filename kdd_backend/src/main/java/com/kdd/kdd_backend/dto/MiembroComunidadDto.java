@@ -6,12 +6,9 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UsuarioDto {
+public class MiembroComunidadDto {
     private Long id;
     private String nombre;
-    private String email;
     private String fotoPerfil;
-    private String descripcion;
     private Integer edad;
-    private String fechaNacimiento; // ISO YYYY-MM-DD (solo visible para el propio usuario)
 }

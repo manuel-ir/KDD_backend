@@ -2,6 +2,7 @@ package com.kdd.kdd_backend.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -40,7 +41,8 @@ public class Usuario {
     @Column(columnDefinition = "TEXT")
     private String descripcion;
 
-    private Integer edad;
+    @Column(name = "fecha_nacimiento")
+    private LocalDate fechaNacimiento;
 
     @PrePersist
     protected void onCreate() {

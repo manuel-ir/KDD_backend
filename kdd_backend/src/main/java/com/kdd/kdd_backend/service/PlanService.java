@@ -23,14 +23,14 @@ public class PlanService {
     public List<PlanDto> listarPlanes() {
         return planRepository.findAll()
                 .stream()
-                .map(this::toDto)
+                .map(p -> toDto(p, null))
                 .collect(Collectors.toList());
     }
 
-    public PlanDto getDetalle(Long planId) {
+    public PlanDto getDetalle(Long planId, Long userId) {
         Plan plan = planRepository.findById(planId)
                 .orElseThrow(() -> new RuntimeException("Plan no encontrado"));
-        return toDto(plan);
+        return toDto(plan, userId);
     }
 
     public PlanDto crearPlan(Long userId, CrearPlanDto dto) {
@@ -70,7 +70,7 @@ public class PlanService {
         participacion.setEstado("confirmado");
         participacionRepository.save(participacion);
 
-        return toDto(plan);
+        return toDto(plan, userId);
     }
 
     public void unirse(Long userId, Long planId) {
@@ -92,14 +92,14 @@ public class PlanService {
         participacion.setId(new ParticipacionId(userId, planId));
         participacion.setUsuario(usuario);
         participacion.setPlan(plan);
-        participacion.setEstado("pendiente");
+        participacion.setEstado("confirmado");
         participacionRepository.save(participacion);
     }
 
     public List<PlanDto> misPlanes(Long userId) {
         return participacionRepository.findByIdUsuarioId(userId)
                 .stream()
-                .map(p -> toDto(p.getPlan()))
+                .map(p -> toDto(p.getPlan(), userId))
                 .collect(Collectors.toList());
     }
 
@@ -119,7 +119,10 @@ public class PlanService {
         participacionRepository.deleteByIdUsuarioIdAndIdPlanId(userId, planId);
     }
 
-    private PlanDto toDto(Plan p) {
+    private PlanDto toDto(Plan p, Long userId) {
+        boolean esMiembro = userId != null && participacionRepository.existsByIdUsuarioIdAndIdPlanId(userId, p.getId());
+        boolean esCreador = userId != null && p.getCreador() != null && p.getCreador().getId().equals(userId);
+
         return PlanDto.builder()
                 .id(p.getId())
                 .titulo(p.getTitulo())
@@ -135,6 +138,8 @@ public class PlanService {
                 .anfitrionNombre(p.getCreador() != null ? p.getCreador().getNombre() : null)
                 .anfitrionId(p.getCreador() != null ? p.getCreador().getId() : null)
                 .numParticipantes(participacionRepository.countByIdPlanId(p.getId()))
+                .miembro(esMiembro)
+                .creador(esCreador)
                 .build();
     }
 }

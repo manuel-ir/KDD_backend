@@ -23,4 +23,6 @@ public class PlanDto {
     private String anfitrionNombre;
     private Long anfitrionId;
     private int numParticipantes;
+    private boolean miembro;
+    private boolean creador;
 }

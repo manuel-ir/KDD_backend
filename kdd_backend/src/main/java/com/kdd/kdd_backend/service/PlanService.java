@@ -95,12 +95,12 @@ public class PlanService {
         participacion.setId(new ParticipacionId(userId, planId));
         participacion.setUsuario(usuario);
         participacion.setPlan(plan);
-        participacion.setEstado("confirmado");
+        participacion.setEstado("pendiente");
         participacionRepository.save(participacion);
     }
 
     public List<ParticipanteDto> getParticipantes(Long planId) {
-        return participacionRepository.findByIdPlanId(planId)
+        return participacionRepository.findByIdPlanIdAndEstado(planId, "confirmado")
                 .stream()
                 .map(p -> {
                     Usuario u = p.getUsuario();
@@ -116,6 +116,55 @@ public class PlanService {
                             .build();
                 })
                 .collect(Collectors.toList());
+    }
+
+    public List<ParticipanteDto> getSolicitudes(Long planId, Long adminId) {
+        Plan plan = planRepository.findById(planId)
+                .orElseThrow(() -> new RuntimeException("Plan no encontrado"));
+        if (plan.getCreador() == null || !plan.getCreador().getId().equals(adminId)) {
+            throw new RuntimeException("Solo el anfitrión puede ver las solicitudes");
+        }
+        return participacionRepository.findByIdPlanIdAndEstado(planId, "pendiente")
+                .stream()
+                .map(p -> {
+                    Usuario u = p.getUsuario();
+                    Integer edad = u.getFechaNacimiento() != null
+                            ? Period.between(u.getFechaNacimiento(), LocalDate.now()).getYears()
+                            : null;
+                    return ParticipanteDto.builder()
+                            .id(u.getId())
+                            .nombre(u.getNombre())
+                            .edad(edad)
+                            .descripcion(u.getDescripcion())
+                            .fotoPerfil(u.getFotoPerfil())
+                            .build();
+                })
+                .collect(Collectors.toList());
+    }
+
+    public void confirmarParticipante(Long adminId, Long planId, Long usuarioId) {
+        Plan plan = planRepository.findById(planId)
+                .orElseThrow(() -> new RuntimeException("Plan no encontrado"));
+        if (plan.getCreador() == null || !plan.getCreador().getId().equals(adminId)) {
+            throw new RuntimeException("Solo el anfitrión puede confirmar participantes");
+        }
+        Participacion p = participacionRepository
+                .findByIdPlanIdAndEstado(planId, "pendiente")
+                .stream()
+                .filter(x -> x.getUsuario().getId().equals(usuarioId))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Solicitud no encontrada"));
+        p.setEstado("confirmado");
+        participacionRepository.save(p);
+    }
+
+    public void rechazarParticipante(Long adminId, Long planId, Long usuarioId) {
+        Plan plan = planRepository.findById(planId)
+                .orElseThrow(() -> new RuntimeException("Plan no encontrado"));
+        if (plan.getCreador() == null || !plan.getCreador().getId().equals(adminId)) {
+            throw new RuntimeException("Solo el anfitrión puede rechazar participantes");
+        }
+        participacionRepository.deleteByIdUsuarioIdAndIdPlanId(usuarioId, planId);
     }
 
     public List<PlanDto> misPlanes(Long userId) {
@@ -143,4 +192,29 @@ public class PlanService {
 
     private PlanDto toDto(Plan p, Long userId) {
         boolean esMiembro = userId != null && participacionRepository.existsByIdUsuarioIdAndIdPlanId(userId, p.getId());
-        boolean esCreador = userId != null && p.getCreador() != null && p.getCreador().getId().equals(u
+        boolean esCreador = userId != null && p.getCreador() != null && p.getCreador().getId().equals(userId);
+        boolean esPendiente = userId != null && !esCreador
+                && participacionRepository.existsByIdUsuarioIdAndIdPlanIdAndEstado(userId, p.getId(), "pendiente");
+
+        return PlanDto.builder()
+                .id(p.getId())
+                .titulo(p.getTitulo())
+                .descripcion(p.getDescripcion())
+                .categoria(p.getCategoria() != null ? p.getCategoria().getTipo() : null)
+                .fechaEvento(p.getFechaEvento())
+                .horaEvento(p.getHoraEvento())
+                .ubicacionTexto(p.getUbicacionTexto())
+                .edadMin(p.getEdadMin())
+                .edadMax(p.getEdadMax())
+                .numMaxPersonas(p.getNumMaxPersonas())
+                .idioma(p.getIdioma())
+                .anfitrionNombre(p.getCreador() != null ? p.getCreador().getNombre() : null)
+                .anfitrionId(p.getCreador() != null ? p.getCreador().getId() : null)
+                .numParticipantes(participacionRepository.countByIdPlanIdAndEstado(p.getId(), "confirmado"))
+                .numApuntados(participacionRepository.countByIdPlanId(p.getId()))
+                .miembro(esMiembro)
+                .creador(esCreador)
+                .pendiente(esPendiente)
+                .build();
+    }
+}

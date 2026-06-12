@@ -47,6 +47,26 @@ public class PlanController {
         return ResponseEntity.ok(planService.getParticipantes(id));
     }
 
+    @GetMapping("/{id}/solicitudes")
+    public ResponseEntity<List<ParticipanteDto>> solicitudes(Authentication auth, @PathVariable Long id) {
+        Long userId = (Long) auth.getPrincipal();
+        return ResponseEntity.ok(planService.getSolicitudes(id, userId));
+    }
+
+    @PutMapping("/{id}/participantes/{usuarioId}/confirmar")
+    public ResponseEntity<Void> confirmar(Authentication auth, @PathVariable Long id, @PathVariable Long usuarioId) {
+        Long userId = (Long) auth.getPrincipal();
+        planService.confirmarParticipante(userId, id, usuarioId);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/{id}/participantes/{usuarioId}")
+    public ResponseEntity<Void> rechazar(Authentication auth, @PathVariable Long id, @PathVariable Long usuarioId) {
+        Long userId = (Long) auth.getPrincipal();
+        planService.rechazarParticipante(userId, id, usuarioId);
+        return ResponseEntity.ok().build();
+    }
+
     @PostMapping("/{id}/unirse")
     public ResponseEntity<Void> unirse(Authentication auth, @PathVariable Long id) {
         Long userId = (Long) auth.getPrincipal();
@@ -54,4 +74,10 @@ public class PlanController {
         return ResponseEntity.ok().build();
     }
 
-    @DeleteMapping("/{
+    @DeleteMapping("/{id}/abandonar")
+    public ResponseEntity<Void> abandonar(Authentication auth, @PathVariable Long id) {
+        Long userId = (Long) auth.getPrincipal();
+        planService.abandonar(userId, id);
+        return ResponseEntity.ok().build();
+    }
+}

@@ -20,6 +20,8 @@ public class PlanDto {
     private Integer edadMax;
     private Integer numMaxPersonas;
     private String idioma;
+    private Double latitud;
+    private Double longitud;
     private String anfitrionNombre;
     private Long anfitrionId;
     private int numParticipantes;

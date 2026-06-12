@@ -1,6 +1,7 @@
 package com.kdd.kdd_backend.service;
 
 import com.kdd.kdd_backend.dto.CrearPlanDto;
+import com.kdd.kdd_backend.dto.ParticipanteDto;
 import com.kdd.kdd_backend.dto.PlanDto;
 import com.kdd.kdd_backend.model.*;
 import com.kdd.kdd_backend.repository.*;
@@ -8,6 +9,8 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.Period;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -96,6 +99,25 @@ public class PlanService {
         participacionRepository.save(participacion);
     }
 
+    public List<ParticipanteDto> getParticipantes(Long planId) {
+        return participacionRepository.findByIdPlanId(planId)
+                .stream()
+                .map(p -> {
+                    Usuario u = p.getUsuario();
+                    Integer edad = u.getFechaNacimiento() != null
+                            ? Period.between(u.getFechaNacimiento(), LocalDate.now()).getYears()
+                            : null;
+                    return ParticipanteDto.builder()
+                            .id(u.getId())
+                            .nombre(u.getNombre())
+                            .edad(edad)
+                            .descripcion(u.getDescripcion())
+                            .fotoPerfil(u.getFotoPerfil())
+                            .build();
+                })
+                .collect(Collectors.toList());
+    }
+
     public List<PlanDto> misPlanes(Long userId) {
         return participacionRepository.findByIdUsuarioId(userId)
                 .stream()
@@ -121,25 +143,4 @@ public class PlanService {
 
     private PlanDto toDto(Plan p, Long userId) {
         boolean esMiembro = userId != null && participacionRepository.existsByIdUsuarioIdAndIdPlanId(userId, p.getId());
-        boolean esCreador = userId != null && p.getCreador() != null && p.getCreador().getId().equals(userId);
-
-        return PlanDto.builder()
-                .id(p.getId())
-                .titulo(p.getTitulo())
-                .descripcion(p.getDescripcion())
-                .categoria(p.getCategoria() != null ? p.getCategoria().getTipo() : null)
-                .fechaEvento(p.getFechaEvento())
-                .horaEvento(p.getHoraEvento())
-                .ubicacionTexto(p.getUbicacionTexto())
-                .edadMin(p.getEdadMin())
-                .edadMax(p.getEdadMax())
-                .numMaxPersonas(p.getNumMaxPersonas())
-                .idioma(p.getIdioma())
-                .anfitrionNombre(p.getCreador() != null ? p.getCreador().getNombre() : null)
-                .anfitrionId(p.getCreador() != null ? p.getCreador().getId() : null)
-                .numParticipantes(participacionRepository.countByIdPlanId(p.getId()))
-                .miembro(esMiembro)
-                .creador(esCreador)
-                .build();
-    }
-}
+        boolean esCreador = userId != null && p.getCreador() != null && p.getCreador().getId().equals(u

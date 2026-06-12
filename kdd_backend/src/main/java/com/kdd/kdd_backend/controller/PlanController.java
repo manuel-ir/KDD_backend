@@ -1,6 +1,7 @@
 package com.kdd.kdd_backend.controller;
 
 import com.kdd.kdd_backend.dto.CrearPlanDto;
+import com.kdd.kdd_backend.dto.ParticipanteDto;
 import com.kdd.kdd_backend.dto.PlanDto;
 import com.kdd.kdd_backend.service.PlanService;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +42,11 @@ public class PlanController {
         return ResponseEntity.ok(planService.crearPlan(userId, dto));
     }
 
+    @GetMapping("/{id}/participantes")
+    public ResponseEntity<List<ParticipanteDto>> participantes(@PathVariable Long id) {
+        return ResponseEntity.ok(planService.getParticipantes(id));
+    }
+
     @PostMapping("/{id}/unirse")
     public ResponseEntity<Void> unirse(Authentication auth, @PathVariable Long id) {
         Long userId = (Long) auth.getPrincipal();
@@ -48,10 +54,4 @@ public class PlanController {
         return ResponseEntity.ok().build();
     }
 
-    @DeleteMapping("/{id}/abandonar")
-    public ResponseEntity<Void> abandonar(Authentication auth, @PathVariable Long id) {
-        Long userId = (Long) auth.getPrincipal();
-        planService.abandonar(userId, id);
-        return ResponseEntity.ok().build();
-    }
-}
+    @DeleteMapping("/{

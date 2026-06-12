@@ -60,6 +60,8 @@ public class PlanService {
                 .edadMax(dto.getEdadMax())
                 .numMaxPersonas(dto.getNumMaxPersonas())
                 .idioma(dto.getIdioma())
+                .latitud(dto.getLatitud())
+                .longitud(dto.getLongitud())
                 .creador(creador)
                 .categoria(categoria)
                 .build();
@@ -210,6 +212,8 @@ public class PlanService {
                 .idioma(p.getIdioma())
                 .anfitrionNombre(p.getCreador() != null ? p.getCreador().getNombre() : null)
                 .anfitrionId(p.getCreador() != null ? p.getCreador().getId() : null)
+                .latitud(p.getLatitud())
+                .longitud(p.getLongitud())
                 .numParticipantes(participacionRepository.countByIdPlanIdAndEstado(p.getId(), "confirmado"))
                 .numApuntados(participacionRepository.countByIdPlanId(p.getId()))
                 .miembro(esMiembro)

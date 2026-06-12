@@ -18,4 +18,6 @@ public class CrearPlanDto {
     private Integer edadMax;
     private Integer numMaxPersonas;
     private String idioma;
+    private Double latitud;
+    private Double longitud;
 }

@@ -49,6 +49,10 @@ public class Plan {
 
     private String idioma;
 
+    private Double latitud;
+
+    private Double longitud;
+
     @ManyToOne
     @JoinColumn(name = "id_creador")
     private Usuario creador;

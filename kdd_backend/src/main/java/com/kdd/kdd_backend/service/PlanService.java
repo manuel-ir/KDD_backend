@@ -1,6 +1,8 @@
 package com.kdd.kdd_backend.service;
 
 import com.kdd.kdd_backend.dto.CrearPlanDto;
+import com.kdd.kdd_backend.model.PertenenciaPlanComunidad;
+import com.kdd.kdd_backend.model.PertenenciaPlanComunidadId;
 import com.kdd.kdd_backend.dto.ParticipanteDto;
 import com.kdd.kdd_backend.dto.PlanDto;
 import com.kdd.kdd_backend.model.*;
@@ -22,6 +24,8 @@ public class PlanService {
     private final UsuarioRepository usuarioRepository;
     private final CategoriaRepository categoriaRepository;
     private final ParticipacionRepository participacionRepository;
+    private final PertenenciaPlanComunidadRepository pertenenciaPlanComunidadRepository;
+    private final ComunidadRepository comunidadRepository;
 
     public List<PlanDto> listarPlanes() {
         return planRepository.findAll()
@@ -72,6 +76,17 @@ public class PlanService {
         participacion.setPlan(plan);
         participacion.setEstado("confirmado");
         participacionRepository.save(participacion);
+
+        if (dto.getComunidadId() != null) {
+            Comunidad comunidad = comunidadRepository.findById(dto.getComunidadId())
+                    .orElseThrow(() -> new RuntimeException("Comunidad no encontrada"));
+            PertenenciaPlanComunidad ppc = new PertenenciaPlanComunidad();
+            ppc.setId(new PertenenciaPlanComunidadId(plan.getId(), dto.getComunidadId()));
+            ppc.setPlan(plan);
+            ppc.setComunidad(comunidad);
+            ppc.setEstado("confirmado");
+            pertenenciaPlanComunidadRepository.save(ppc);
+        }
 
         return toDto(plan, userId);
     }
@@ -167,6 +182,13 @@ public class PlanService {
         participacionRepository.deleteByIdUsuarioIdAndIdPlanId(usuarioId, planId);
     }
 
+    public List<PlanDto> getPlanesComunidad(Long comunidadId, Long userId) {
+        return pertenenciaPlanComunidadRepository.findByIdComunidadId(comunidadId)
+                .stream()
+                .map(ppc -> toDto(ppc.getPlan(), userId))
+                .collect(Collectors.toList());
+    }
+
     public List<PlanDto> misPlanes(Long userId) {
         return participacionRepository.findByIdUsuarioId(userId)
                 .stream()
@@ -214,7 +236,4 @@ public class PlanService {
                 .numApuntados(participacionRepository.countByIdPlanId(p.getId()))
                 .miembro(esMiembro)
                 .creador(esCreador)
-                .pendiente(esPendiente)
-                .build();
-    }
-}
+                .pendiente(esP

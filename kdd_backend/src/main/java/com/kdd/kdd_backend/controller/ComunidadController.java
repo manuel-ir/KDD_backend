@@ -3,7 +3,9 @@ package com.kdd.kdd_backend.controller;
 import com.kdd.kdd_backend.dto.ComunidadDto;
 import com.kdd.kdd_backend.dto.CrearComunidadDto;
 import com.kdd.kdd_backend.dto.MiembroComunidadDto;
+import com.kdd.kdd_backend.dto.PlanDto;
 import com.kdd.kdd_backend.service.ComunidadService;
+import com.kdd.kdd_backend.service.PlanService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -17,6 +19,7 @@ import java.util.List;
 public class ComunidadController {
 
     private final ComunidadService comunidadService;
+    private final PlanService planService;
 
     @GetMapping
     public ResponseEntity<List<ComunidadDto>> listar() {
@@ -53,5 +56,11 @@ public class ComunidadController {
     @GetMapping("/{id}/miembros")
     public ResponseEntity<List<MiembroComunidadDto>> miembros(@PathVariable Long id) {
         return ResponseEntity.ok(comunidadService.getMiembros(id));
+    }
+
+    @GetMapping("/{id}/planes")
+    public ResponseEntity<List<PlanDto>> planes(Authentication auth, @PathVariable Long id) {
+        Long userId = (Long) auth.getPrincipal();
+        return ResponseEntity.ok(planService.getPlanesComunidad(id, userId));
     }
 }

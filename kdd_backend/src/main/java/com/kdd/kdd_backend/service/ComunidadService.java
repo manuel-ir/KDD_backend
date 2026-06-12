@@ -22,6 +22,7 @@ public class ComunidadService {
     private final ComunidadRepository comunidadRepository;
     private final UsuarioRepository usuarioRepository;
     private final PertenenciaComunidadRepository pertenenciaRepository;
+    private final PertenenciaPlanComunidadRepository pertenenciaPlanComunidadRepository;
 
     public List<ComunidadDto> listar() {
         return comunidadRepository.findAll()

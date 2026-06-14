@@ -240,4 +240,7 @@ public class PlanService {
                 .numApuntados(participacionRepository.countByIdPlanId(p.getId()))
                 .miembro(esMiembro)
                 .creador(esCreador)
-                .pendiente(esP
+                .pendiente(esPendiente)
+                .build();
+    }
+}

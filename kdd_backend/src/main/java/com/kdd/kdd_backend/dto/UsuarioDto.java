@@ -9,9 +9,10 @@ import lombok.*;
 public class UsuarioDto {
     private Long id;
     private String nombre;
+    private String nombreUsuario;
     private String email;
     private String fotoPerfil;
     private String descripcion;
     private Integer edad;
-    private String fechaNacimiento; // ISO YYYY-MM-DD (solo visible para el propio usuario)
+    private String fechaNacimiento;
 }

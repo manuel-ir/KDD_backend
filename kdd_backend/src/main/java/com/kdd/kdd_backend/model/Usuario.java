@@ -44,6 +44,9 @@ public class Usuario {
     @Column(name = "fecha_nacimiento")
     private LocalDate fechaNacimiento;
 
+    @Column(name = "nombre_usuario", unique = true)
+    private String nombreUsuario;
+
     @PrePersist
     protected void onCreate() {
         fechaRegistro = LocalDateTime.now();

@@ -7,7 +7,8 @@ import lombok.*;
 @AllArgsConstructor
 public class EditarUsuarioDto {
     private String nombre;
+    private String nombreUsuario;
     private String descripcion;
-    private String fechaNacimiento; // ISO YYYY-MM-DD
+    private String fechaNacimiento;
     private String fotoPerfil;
 }

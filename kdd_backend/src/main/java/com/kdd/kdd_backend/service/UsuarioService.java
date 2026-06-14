@@ -27,9 +27,11 @@ public class UsuarioService {
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         if (dto.getNombre() != null) usuario.setNombre(dto.getNombre());
+        if (dto.getNombreUsuario() != null) usuario.setNombreUsuario(dto.getNombreUsuario().isBlank() ? null : dto.getNombreUsuario().trim());
         if (dto.getDescripcion() != null) usuario.setDescripcion(dto.getDescripcion());
         if (dto.getFotoPerfil() != null) usuario.setFotoPerfil(dto.getFotoPerfil());
-        if (dto.getFechaNacimiento() != null && !dto.getFechaNacimiento().isBlank()) {
+        if (dto.getFechaNacimiento() != null && !dto.getFechaNacimiento().isBlank()
+                && usuario.getFechaNacimiento() == null) {
             usuario.setFechaNacimiento(LocalDate.parse(dto.getFechaNacimiento()));
         }
 
@@ -47,6 +49,7 @@ public class UsuarioService {
         return UsuarioDto.builder()
                 .id(u.getId())
                 .nombre(u.getNombre())
+                .nombreUsuario(u.getNombreUsuario())
                 .email(u.getEmail())
                 .fotoPerfil(u.getFotoPerfil())
                 .descripcion(u.getDescripcion())

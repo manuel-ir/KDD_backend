@@ -72,6 +72,15 @@ public class ComunidadService {
         Comunidad comunidad = comunidadRepository.findById(comunidadId)
                 .orElseThrow(() -> new RuntimeException("Comunidad no encontrada"));
 
+        if (usuario.getEdad() != null) {
+            if (comunidad.getEdadMin() != null && usuario.getEdad() < comunidad.getEdadMin()) {
+                throw new RuntimeException("No cumples la edad mínima para esta comunidad");
+            }
+            if (comunidad.getEdadMax() != null && usuario.getEdad() > comunidad.getEdadMax()) {
+                throw new RuntimeException("Superas la edad máxima para esta comunidad");
+            }
+        }
+
         PertenenciaComunidad pertenencia = new PertenenciaComunidad();
         pertenencia.setId(new PertenenciaComunidadId(userId, comunidadId));
         pertenencia.setUsuario(usuario);

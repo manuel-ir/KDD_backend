@@ -7,8 +7,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 
-import java.time.LocalDate;
-
 @Service
 @RequiredArgsConstructor
 public class ValoracionService {
@@ -23,20 +21,15 @@ public class ValoracionService {
             throw new RuntimeException("No puedes valorarte a ti mismo");
         }
 
-<<<<<<< HEAD
-        if (!participacionRepository.existsByIdUsuarioIdAndIdPlanIdAndEstado(valoradorId, dto.getIdPlan(), "confirmado")) {
-            throw new RuntimeException("No fuiste confirmado como participante en este plan");
-=======
         Plan plan = planRepository.findById(dto.getIdPlan())
                 .orElseThrow(() -> new RuntimeException("Plan no encontrado"));
 
-        if (plan.getFechaEvento() != null && !plan.getFechaEvento().isBefore(LocalDate.now())) {
-            throw new RuntimeException("Solo puedes valorar después de que el plan haya tenido lugar");
+        if (plan.getFechaEvento() == null || !plan.getFechaEvento().isBefore(LocalDate.now())) {
+            throw new RuntimeException("Solo puedes valorar después de que el plan haya finalizado");
         }
 
-        if (!participacionRepository.existsByIdUsuarioIdAndIdPlanId(valoradorId, dto.getIdPlan())) {
-            throw new RuntimeException("No participaste en este plan");
->>>>>>> develop
+        if (!participacionRepository.existsByIdUsuarioIdAndIdPlanIdAndEstado(valoradorId, dto.getIdPlan(), "confirmado")) {
+            throw new RuntimeException("No fuiste confirmado como participante en este plan");
         }
 
         if (!participacionRepository.existsByIdUsuarioIdAndIdPlanIdAndEstado(dto.getIdValorado(), dto.getIdPlan(), "confirmado")) {
@@ -57,10 +50,6 @@ public class ValoracionService {
         Usuario valorado = usuarioRepository.findById(dto.getIdValorado())
                 .orElseThrow(() -> new RuntimeException("Usuario valorado no encontrado"));
 
-        if (plan.getFechaEvento() == null || !plan.getFechaEvento().isBefore(LocalDate.now())) {
-            throw new RuntimeException("Solo puedes valorar después de que el plan haya finalizado");
-        }
-
         Valoracion valoracion = new Valoracion();
         valoracion.setIdValorador(valoradorId);
         valoracion.setIdValorado(dto.getIdValorado());
@@ -70,7 +59,6 @@ public class ValoracionService {
         valoracion.setPlan(plan);
         valoracion.setPuntuacion(dto.getPuntuacion());
         valoracion.setComentario(dto.getComentario());
-
         valoracionRepository.save(valoracion);
     }
 }

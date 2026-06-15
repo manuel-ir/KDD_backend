@@ -5,6 +5,7 @@ import com.kdd.kdd_backend.model.*;
 import com.kdd.kdd_backend.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import java.time.LocalDate;
 
 @Service
 @RequiredArgsConstructor
@@ -20,12 +21,12 @@ public class ValoracionService {
             throw new RuntimeException("No puedes valorarte a ti mismo");
         }
 
-        if (!participacionRepository.existsByIdUsuarioIdAndIdPlanId(valoradorId, dto.getIdPlan())) {
-            throw new RuntimeException("No participaste en este plan");
+        if (!participacionRepository.existsByIdUsuarioIdAndIdPlanIdAndEstado(valoradorId, dto.getIdPlan(), "confirmado")) {
+            throw new RuntimeException("No fuiste confirmado como participante en este plan");
         }
 
-        if (!participacionRepository.existsByIdUsuarioIdAndIdPlanId(dto.getIdValorado(), dto.getIdPlan())) {
-            throw new RuntimeException("El usuario valorado no participó en este plan");
+        if (!participacionRepository.existsByIdUsuarioIdAndIdPlanIdAndEstado(dto.getIdValorado(), dto.getIdPlan(), "confirmado")) {
+            throw new RuntimeException("El usuario valorado no fue confirmado en este plan");
         }
 
         ValoracionId id = new ValoracionId(valoradorId, dto.getIdValorado(), dto.getIdPlan());
@@ -43,6 +44,10 @@ public class ValoracionService {
                 .orElseThrow(() -> new RuntimeException("Usuario valorado no encontrado"));
         Plan plan = planRepository.findById(dto.getIdPlan())
                 .orElseThrow(() -> new RuntimeException("Plan no encontrado"));
+
+        if (plan.getFechaEvento() == null || !plan.getFechaEvento().isBefore(LocalDate.now())) {
+            throw new RuntimeException("Solo puedes valorar después de que el plan haya finalizado");
+        }
 
         Valoracion valoracion = new Valoracion();
         valoracion.setIdValorador(valoradorId);

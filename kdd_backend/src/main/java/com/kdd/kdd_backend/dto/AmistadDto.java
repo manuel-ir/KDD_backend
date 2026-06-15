@@ -5,10 +5,10 @@ import lombok.*;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class EditarUsuarioDto {
+@Builder
+public class AmistadDto {
+    private Long idAmigo;
     private String nombre;
-    private String nombreUsuario;
-    private String descripcion;
-    private String fechaNacimiento;
     private String fotoPerfil;
+    private String estado;
 }

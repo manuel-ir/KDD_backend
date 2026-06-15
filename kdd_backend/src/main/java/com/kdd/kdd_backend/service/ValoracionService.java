@@ -21,6 +21,13 @@ public class ValoracionService {
             throw new RuntimeException("No puedes valorarte a ti mismo");
         }
 
+        Plan plan = planRepository.findById(dto.getIdPlan())
+                .orElseThrow(() -> new RuntimeException("Plan no encontrado"));
+
+        if (plan.getFechaEvento() == null || !plan.getFechaEvento().isBefore(LocalDate.now())) {
+            throw new RuntimeException("Solo puedes valorar después de que el plan haya finalizado");
+        }
+
         if (!participacionRepository.existsByIdUsuarioIdAndIdPlanIdAndEstado(valoradorId, dto.getIdPlan(), "confirmado")) {
             throw new RuntimeException("No fuiste confirmado como participante en este plan");
         }
@@ -42,12 +49,6 @@ public class ValoracionService {
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
         Usuario valorado = usuarioRepository.findById(dto.getIdValorado())
                 .orElseThrow(() -> new RuntimeException("Usuario valorado no encontrado"));
-        Plan plan = planRepository.findById(dto.getIdPlan())
-                .orElseThrow(() -> new RuntimeException("Plan no encontrado"));
-
-        if (plan.getFechaEvento() == null || !plan.getFechaEvento().isBefore(LocalDate.now())) {
-            throw new RuntimeException("Solo puedes valorar después de que el plan haya finalizado");
-        }
 
         Valoracion valoracion = new Valoracion();
         valoracion.setIdValorador(valoradorId);
@@ -58,7 +59,6 @@ public class ValoracionService {
         valoracion.setPlan(plan);
         valoracion.setPuntuacion(dto.getPuntuacion());
         valoracion.setComentario(dto.getComentario());
-
         valoracionRepository.save(valoracion);
     }
 }

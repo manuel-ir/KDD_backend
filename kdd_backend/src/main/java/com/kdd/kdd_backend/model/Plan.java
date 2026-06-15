@@ -49,6 +49,13 @@ public class Plan {
 
     private String idioma;
 
+    private Double latitud;
+
+    private Double longitud;
+
+    @Column(name = "imagen_url")
+    private String imagenUrl;
+
     @ManyToOne
     @JoinColumn(name = "id_creador")
     private Usuario creador;

@@ -12,5 +12,10 @@ public interface ParticipacionRepository extends JpaRepository<Participacion, Pa
     int countByIdPlanId(Long planId);
     boolean existsByIdUsuarioIdAndIdPlanId(Long usuarioId, Long planId);
     List<Participacion> findByIdUsuarioId(Long usuarioId);
+    List<Participacion> findByIdPlanId(Long planId);
+    List<Participacion> findByIdPlanIdAndEstado(Long planId, String estado);
+    boolean existsByIdUsuarioIdAndIdPlanIdAndEstado(Long usuarioId, Long planId, String estado);
+    int countByIdPlanIdAndEstado(Long planId, String estado);
     void deleteByIdUsuarioIdAndIdPlanId(Long usuarioId, Long planId);
+    void deleteByIdPlanId(Long planId);
 }

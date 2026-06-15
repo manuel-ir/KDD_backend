@@ -5,10 +5,11 @@ import lombok.*;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class CrearComunidadDto {
+@Builder
+public class ParticipanteDto {
+    private Long id;
     private String nombre;
+    private Integer edad;
     private String descripcion;
-    private String ubicacion;
-    private Integer edadMin;
-    private Integer edadMax;
+    private String fotoPerfil;
 }

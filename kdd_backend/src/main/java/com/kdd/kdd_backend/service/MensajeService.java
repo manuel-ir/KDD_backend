@@ -47,7 +47,7 @@ public class MensajeService {
                 .emisorId(m.getEmisor().getId())
                 .receptorId(m.getReceptor().getId())
                 .contenido(m.getContenido())
-                .fechaEnvio(m.getFechaEnvio())
+                .fechaEnvio(m.getFechaEnvio() != null ? m.getFechaEnvio().toString() : null)
                 .build();
     }
 }

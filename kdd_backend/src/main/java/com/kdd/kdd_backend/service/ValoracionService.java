@@ -5,6 +5,7 @@ import com.kdd.kdd_backend.model.*;
 import com.kdd.kdd_backend.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import java.time.LocalDate;
 
 @Service
 @RequiredArgsConstructor
@@ -43,6 +44,10 @@ public class ValoracionService {
                 .orElseThrow(() -> new RuntimeException("Usuario valorado no encontrado"));
         Plan plan = planRepository.findById(dto.getIdPlan())
                 .orElseThrow(() -> new RuntimeException("Plan no encontrado"));
+
+        if (plan.getFechaEvento() == null || !plan.getFechaEvento().isBefore(LocalDate.now())) {
+            throw new RuntimeException("Solo puedes valorar después de que el plan haya finalizado");
+        }
 
         Valoracion valoracion = new Valoracion();
         valoracion.setIdValorador(valoradorId);

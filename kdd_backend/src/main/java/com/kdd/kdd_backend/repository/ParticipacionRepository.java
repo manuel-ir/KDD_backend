@@ -17,4 +17,5 @@ public interface ParticipacionRepository extends JpaRepository<Participacion, Pa
     boolean existsByIdUsuarioIdAndIdPlanIdAndEstado(Long usuarioId, Long planId, String estado);
     int countByIdPlanIdAndEstado(Long planId, String estado);
     void deleteByIdUsuarioIdAndIdPlanId(Long usuarioId, Long planId);
+    void deleteByIdPlanId(Long planId);
 }

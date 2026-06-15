@@ -3,6 +3,8 @@ package com.kdd.kdd_backend.controller;
 import com.kdd.kdd_backend.dto.CrearPlanDto;
 import com.kdd.kdd_backend.dto.ParticipanteDto;
 import com.kdd.kdd_backend.dto.PlanDto;
+import java.util.List;
+import java.util.Map;
 import com.kdd.kdd_backend.service.PlanService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -79,5 +81,33 @@ public class PlanController {
         Long userId = (Long) auth.getPrincipal();
         planService.abandonar(userId, id);
         return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/{id}/foto")
+    public ResponseEntity<Void> actualizarFoto(Authentication auth, @PathVariable Long id,
+                                               @RequestBody Map<String, String> body) {
+        Long userId = (Long) auth.getPrincipal();
+        planService.actualizarFotoPlan(id, userId, body.get("imagenUrl"));
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/historial")
+    public ResponseEntity<List<PlanDto>> historial(Authentication auth) {
+        Long userId = (Long) auth.getPrincipal();
+        return ResponseEntity.ok(planService.getHistorial(userId));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminar(Authentication auth, @PathVariable Long id) {
+        Long userId = (Long) auth.getPrincipal();
+        planService.eliminarPlan(id, userId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<PlanDto> editar(Authentication auth, @PathVariable Long id,
+                                          @RequestBody CrearPlanDto dto) {
+        Long userId = (Long) auth.getPrincipal();
+        return ResponseEntity.ok(planService.editarPlan(id, userId, dto));
     }
 }

@@ -85,12 +85,13 @@ public class ComunidadService {
         Comunidad comunidad = comunidadRepository.findById(comunidadId)
                 .orElseThrow(() -> new RuntimeException("Comunidad no encontrada"));
 
-        if (comunidad.getAdmin() != null && comunidad.getAdmin().getId().equals(userId)) {
-            throw new RuntimeException("El admin no puede abandonar su propia comunidad");
-        }
-
         if (!pertenenciaRepository.existsByIdUsuarioIdAndIdComunidadId(userId, comunidadId)) {
             throw new RuntimeException("No perteneces a esta comunidad");
+        }
+
+        if (comunidad.getAdmin() != null && comunidad.getAdmin().getId().equals(userId)) {
+            comunidad.setAdmin(null);
+            comunidadRepository.save(comunidad);
         }
 
         pertenenciaRepository.deleteByIdUsuarioIdAndIdComunidadId(userId, comunidadId);

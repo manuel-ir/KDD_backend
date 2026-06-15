@@ -5,3 +5,13 @@ KDD_frontend/
 *.png
 *.pdf
 NOTAS_INTERNAS.md
+CONTEXT.md
+
+# Documentación y scripts locales
+build_docs.py
+*.docx
+hito1_actualizado.docx
+
+# IntelliJ
+.idea/
+.gradle/

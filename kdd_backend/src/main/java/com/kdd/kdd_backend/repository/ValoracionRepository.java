@@ -7,4 +7,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface ValoracionRepository extends JpaRepository<Valoracion, ValoracionId> {
+    void deleteByIdPlan(Long planId);
 }

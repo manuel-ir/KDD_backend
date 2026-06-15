@@ -26,6 +26,7 @@ public class PlanService {
     private final ParticipacionRepository participacionRepository;
     private final PertenenciaPlanComunidadRepository pertenenciaPlanComunidadRepository;
     private final ComunidadRepository comunidadRepository;
+    private final ValoracionRepository valoracionRepository;
 
     public List<PlanDto> listarPlanes() {
         return planRepository.findAll()
@@ -192,10 +193,63 @@ public class PlanService {
     }
 
     public List<PlanDto> misPlanes(Long userId) {
-        return participacionRepository.findByIdUsuarioId(userId)
+        return planRepository.findProximosByUsuario(LocalDate.now(), userId)
                 .stream()
-                .map(p -> toDto(p.getPlan(), userId))
+                .map(p -> toDto(p, userId))
                 .collect(Collectors.toList());
+    }
+
+    public List<PlanDto> getHistorial(Long userId) {
+        return planRepository.findHistorialByUsuario(LocalDate.now(), userId)
+                .stream()
+                .map(p -> toDto(p, userId))
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void eliminarPlan(Long planId, Long userId) {
+        Plan plan = planRepository.findById(planId)
+                .orElseThrow(() -> new RuntimeException("Plan no encontrado"));
+        if (plan.getCreador() == null || !plan.getCreador().getId().equals(userId)) {
+            throw new RuntimeException("Solo el creador puede borrar el plan");
+        }
+        valoracionRepository.deleteByIdPlan(planId);
+        participacionRepository.deleteByIdPlanId(planId);
+        pertenenciaPlanComunidadRepository.deleteByIdPlanId(planId);
+        planRepository.delete(plan);
+    }
+
+    @Transactional
+    public PlanDto editarPlan(Long planId, Long userId, CrearPlanDto dto) {
+        Plan plan = planRepository.findById(planId)
+                .orElseThrow(() -> new RuntimeException("Plan no encontrado"));
+        if (plan.getCreador() == null || !plan.getCreador().getId().equals(userId)) {
+            throw new RuntimeException("Solo el creador puede editar el plan");
+        }
+        if (dto.getTitulo() != null) plan.setTitulo(dto.getTitulo());
+        if (dto.getDescripcion() != null) plan.setDescripcion(dto.getDescripcion());
+        if (dto.getFechaEvento() != null) plan.setFechaEvento(dto.getFechaEvento());
+        if (dto.getHoraEvento() != null) plan.setHoraEvento(dto.getHoraEvento());
+        if (dto.getUbicacionTexto() != null) plan.setUbicacionTexto(dto.getUbicacionTexto());
+        if (dto.getEdadMin() != null) plan.setEdadMin(dto.getEdadMin());
+        if (dto.getEdadMax() != null) plan.setEdadMax(dto.getEdadMax());
+        if (dto.getNumMaxPersonas() != null) plan.setNumMaxPersonas(dto.getNumMaxPersonas());
+        if (dto.getIdioma() != null) plan.setIdioma(dto.getIdioma());
+        if (dto.getLatitud() != null) plan.setLatitud(dto.getLatitud());
+        if (dto.getLongitud() != null) plan.setLongitud(dto.getLongitud());
+        if (dto.getCategoria() != null) {
+            Categoria categoria = categoriaRepository.findAll().stream()
+                    .filter(c -> c.getTipo().equalsIgnoreCase(dto.getCategoria()))
+                    .findFirst()
+                    .orElseGet(() -> {
+                        Categoria nueva = new Categoria();
+                        nueva.setTipo(dto.getCategoria());
+                        return categoriaRepository.save(nueva);
+                    });
+            plan.setCategoria(categoria);
+        }
+        planRepository.save(plan);
+        return toDto(plan, userId);
     }
 
     @Transactional
@@ -203,15 +257,27 @@ public class PlanService {
         Plan plan = planRepository.findById(planId)
                 .orElseThrow(() -> new RuntimeException("Plan no encontrado"));
 
-        if (plan.getCreador() != null && plan.getCreador().getId().equals(userId)) {
-            throw new RuntimeException("El creador no puede abandonar su propio plan");
-        }
-
         if (!participacionRepository.existsByIdUsuarioIdAndIdPlanId(userId, planId)) {
             throw new RuntimeException("No estás apuntado a este plan");
         }
 
+        if (plan.getCreador() != null && plan.getCreador().getId().equals(userId)) {
+            plan.setCreador(null);
+            planRepository.save(plan);
+        }
+
         participacionRepository.deleteByIdUsuarioIdAndIdPlanId(userId, planId);
+    }
+
+    @Transactional
+    public void actualizarFotoPlan(Long planId, Long userId, String imagenUrl) {
+        Plan plan = planRepository.findById(planId)
+                .orElseThrow(() -> new RuntimeException("Plan no encontrado"));
+        if (plan.getCreador() == null || !plan.getCreador().getId().equals(userId)) {
+            throw new RuntimeException("Solo el creador puede actualizar la foto del plan");
+        }
+        plan.setImagenUrl(imagenUrl);
+        planRepository.save(plan);
     }
 
     private PlanDto toDto(Plan p, Long userId) {
@@ -234,6 +300,7 @@ public class PlanService {
                 .idioma(p.getIdioma())
                 .latitud(p.getLatitud())
                 .longitud(p.getLongitud())
+                .imagenUrl(p.getImagenUrl())
                 .anfitrionNombre(p.getCreador() != null ? p.getCreador().getNombre() : null)
                 .anfitrionId(p.getCreador() != null ? p.getCreador().getId() : null)
                 .numParticipantes(participacionRepository.countByIdPlanIdAndEstado(p.getId(), "confirmado"))

@@ -53,6 +53,9 @@ public class Plan {
 
     private Double longitud;
 
+    @Column(name = "imagen_url")
+    private String imagenUrl;
+
     @ManyToOne
     @JoinColumn(name = "id_creador")
     private Usuario creador;

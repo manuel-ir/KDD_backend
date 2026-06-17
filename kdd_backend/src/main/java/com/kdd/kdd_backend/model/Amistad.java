@@ -4,6 +4,15 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
 
+/**
+ * Entidad que representa la relacion de amistad entre dos usuarios.
+ *
+ * Mapea la tabla "amistades". La relacion es unidireccional en la base
+ * de datos (usuario -> amigo), pero la logica del servicio busca
+ * en ambas direcciones para gestionar la amistad bidireccionalmente.
+ *
+ * Estados posibles: "pendiente" (solicitud enviada) o "confirmado" (aceptada).
+ */
 @Entity
 @Table(name = "amistades")
 @Data

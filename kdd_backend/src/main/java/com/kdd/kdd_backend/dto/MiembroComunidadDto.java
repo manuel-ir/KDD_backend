@@ -2,6 +2,9 @@ package com.kdd.kdd_backend.dto;
 
 import lombok.*;
 
+/**
+ * DTO con los datos basicos de un miembro de una comunidad.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

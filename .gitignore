@@ -1,7 +1,16 @@
-# Repositorio frontend (submódulo independiente)
+# Repositorio frontend (gestionado como repositorio independiente)
 KDD_frontend/
 
-# Archivos de imagen y documentación temporal
+# Archivos de imagen y documentacion temporal
 *.png
 *.pdf
 NOTAS_INTERNAS.md
+
+# Archivos temporales y de configuracion local
+CONTEXT.md
+build_docs.py
+*.docx
+
+# IntelliJ
+.idea/
+.gradle/

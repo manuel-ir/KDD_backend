@@ -2,8 +2,19 @@ package com.kdd.kdd_backend.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+/**
+ * Entidad que representa a un usuario registrado en la aplicacion.
+ *
+ * Mapea la tabla "usuarios" de la base de datos. Un usuario puede
+ * autenticarse con Google (campo googleId) o con email y contrasena.
+ * El campo proveedor indica el metodo de registro ("google" o "email").
+ *
+ * El alias (nombreUsuario) es opcional pero unico, y solo puede cambiarse
+ * un maximo de 3 veces a lo largo de la vida de la cuenta.
+ */
 @Entity
 @Table(name = "usuarios")
 @Data
@@ -40,7 +51,17 @@ public class Usuario {
     @Column(columnDefinition = "TEXT")
     private String descripcion;
 
-    private Integer edad;
+    @Column(name = "fecha_nacimiento")
+    private LocalDate fechaNacimiento;
+
+    @Column(name = "nombre_usuario", unique = true)
+    private String nombreUsuario;
+
+    @Column(name = "proveedor")
+    private String proveedor; // "google" o "email"
+
+    @Column(name = "contador_cambios_alias", nullable = false)
+    private int contadorCambiosAlias = 0;
 
     @PrePersist
     protected void onCreate() {

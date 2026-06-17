@@ -31,8 +31,6 @@ public class PlanDto {
     private String imagenUrl;
     private String anfitrionNombre;
     private Long anfitrionId;
-    private Double latitud;
-    private Double longitud;
     private String fotoPlanUrl;
     private int numParticipantes;
     private int numApuntados;

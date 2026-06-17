@@ -52,6 +52,18 @@ public class PlanController {
         return ResponseEntity.ok(planService.misPlanes(userId));
     }
 
+    @GetMapping("/historial")
+    public ResponseEntity<List<PlanDto>> historial(Authentication auth) {
+        Long userId = (Long) auth.getPrincipal();
+        return ResponseEntity.ok(planService.historialPlanes(userId));
+    }
+
+    @GetMapping("/mis-planes-creados")
+    public ResponseEntity<List<PlanDto>> misPlanesCreados(Authentication auth) {
+        Long userId = (Long) auth.getPrincipal();
+        return ResponseEntity.ok(planService.planesCreados(userId));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<PlanDto> detalle(Authentication auth, @PathVariable Long id) {
         Long userId = (Long) auth.getPrincipal();
@@ -59,10 +71,14 @@ public class PlanController {
     }
 
     @PostMapping
-    public ResponseEntity<PlanDto> crear(Authentication auth,
-                                          @RequestBody CrearPlanDto dto) {
+    public ResponseEntity<?> crear(Authentication auth,
+                                   @RequestBody CrearPlanDto dto) {
         Long userId = (Long) auth.getPrincipal();
-        return ResponseEntity.ok(planService.crearPlan(userId, dto));
+        try {
+            return ResponseEntity.ok(planService.crearPlan(userId, dto));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
+        }
     }
 
     @PutMapping("/{id}")

@@ -64,7 +64,7 @@ public class TriggerInitializer {
             FOR EACH ROW EXECUTE FUNCTION fn_validar_fecha_plan()
             """,
 
-            // --- Validar edad para unirse a un plan ---
+            // --- Validar edad para unirse a un plan (el creador queda exento) ---
             """
             CREATE OR REPLACE FUNCTION fn_validar_edad_participacion()
             RETURNS TRIGGER AS $$
@@ -72,7 +72,13 @@ public class TriggerInitializer {
                 edad_usuario INT;
                 edad_min_plan INT;
                 edad_max_plan INT;
+                creador_plan BIGINT;
             BEGIN
+                SELECT creador_id INTO creador_plan FROM planes WHERE id_plan = NEW.id_plan;
+                IF NEW.id_usuario = creador_plan THEN
+                    RETURN NEW;
+                END IF;
+
                 SELECT DATE_PART('year', AGE(CURRENT_DATE, u.fecha_nacimiento))
                 INTO edad_usuario
                 FROM usuarios u WHERE u.id_usuario = NEW.id_usuario;
@@ -100,7 +106,7 @@ public class TriggerInitializer {
             FOR EACH ROW EXECUTE FUNCTION fn_validar_edad_participacion()
             """,
 
-            // --- Validar edad para unirse a una comunidad ---
+            // --- Validar edad para unirse a una comunidad (el creador queda exento) ---
             """
             CREATE OR REPLACE FUNCTION fn_validar_edad_comunidad()
             RETURNS TRIGGER AS $$
@@ -108,7 +114,13 @@ public class TriggerInitializer {
                 edad_usuario INT;
                 edad_min_com INT;
                 edad_max_com INT;
+                admin_com BIGINT;
             BEGIN
+                SELECT admin_id INTO admin_com FROM comunidades WHERE id_comunidad = NEW.id_comunidad;
+                IF NEW.id_usuario = admin_com THEN
+                    RETURN NEW;
+                END IF;
+
                 SELECT DATE_PART('year', AGE(CURRENT_DATE, u.fecha_nacimiento))
                 INTO edad_usuario
                 FROM usuarios u WHERE u.id_usuario = NEW.id_usuario;
@@ -162,10 +174,15 @@ public class TriggerInitializer {
             CREATE TRIGGER validar_edad_participacion
             BEFORE INSERT ON participaciones
             FOR EACH ROW
-            BEGIN
+            bloque_plan: BEGIN
                 DECLARE edad_usuario INT;
                 DECLARE edad_min_plan INT;
                 DECLARE edad_max_plan INT;
+                DECLARE creador_plan BIGINT;
+                SELECT id_creador INTO creador_plan FROM planes WHERE id_plan = NEW.id_plan;
+                IF NEW.id_usuario = creador_plan THEN
+                    LEAVE bloque_plan;
+                END IF;
                 SELECT TIMESTAMPDIFF(YEAR, u.fecha_nacimiento, CURDATE()) INTO edad_usuario
                 FROM usuarios u WHERE u.id_usuario = NEW.id_usuario;
                 SELECT p.edad_min, p.edad_max INTO edad_min_plan, edad_max_plan
@@ -185,10 +202,15 @@ public class TriggerInitializer {
             CREATE TRIGGER validar_edad_comunidad
             BEFORE INSERT ON pertenencias_comunidad
             FOR EACH ROW
-            BEGIN
+            bloque_com: BEGIN
                 DECLARE edad_usuario INT;
                 DECLARE edad_min_com INT;
                 DECLARE edad_max_com INT;
+                DECLARE admin_com BIGINT;
+                SELECT id_admin INTO admin_com FROM comunidades WHERE id_comunidad = NEW.id_comunidad;
+                IF NEW.id_usuario = admin_com THEN
+                    LEAVE bloque_com;
+                END IF;
                 SELECT TIMESTAMPDIFF(YEAR, u.fecha_nacimiento, CURDATE()) INTO edad_usuario
                 FROM usuarios u WHERE u.id_usuario = NEW.id_usuario;
                 SELECT c.edad_min, c.edad_max INTO edad_min_com, edad_max_com

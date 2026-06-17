@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.Period;
 import java.time.format.DateTimeFormatter;
@@ -42,19 +43,30 @@ public class PlanService {
     private final ComunidadRepository comunidadRepository;
     private final ValoracionRepository valoracionRepository;
 
+    /**
+     * Decide si un plan ha caducado segun las siguientes reglas:
+     * - Sin fechaEvento: nunca caduca.
+     * - Con horaHasta: caduca en fechaEvento + horaHasta.
+     * - Sin horaHasta: caduca 24 horas despues de fechaEvento + horaEvento
+     *   (si no hay horaEvento se usa medianoche como hora de inicio).
+     */
+    private boolean planHaCaducado(Plan p) {
+        if (p.getFechaEvento() == null) return false;
+        LocalDateTime ahora = LocalDateTime.now();
+        if (p.getHoraHasta() != null) {
+            LocalDateTime fin = LocalDateTime.of(p.getFechaEvento(), p.getHoraHasta());
+            return ahora.isAfter(fin);
+        } else {
+            LocalTime horaInicio = p.getHoraEvento() != null ? p.getHoraEvento() : LocalTime.MIDNIGHT;
+            LocalDateTime inicio = LocalDateTime.of(p.getFechaEvento(), horaInicio);
+            return ahora.isAfter(inicio.plusHours(24));
+        }
+    }
+
     public List<PlanDto> listarPlanes(Long userId) {
-        LocalDate hoy = LocalDate.now();
-        LocalTime ahora = LocalTime.now();
         return planRepository.findAll()
                 .stream()
-                .filter(p -> {
-                    if (p.getFechaEvento() == null) return true;
-                    if (p.getFechaEvento().isAfter(hoy)) return true;
-                    if (p.getFechaEvento().isBefore(hoy)) return false;
-                    if (p.getHoraHasta() != null) return !p.getHoraHasta().isBefore(ahora);
-                    if (p.getHoraEvento() != null) return !p.getHoraEvento().isBefore(ahora);
-                    return true;
-                })
+                .filter(p -> !planHaCaducado(p))
                 .map(p -> toDto(p, userId))
                 .collect(Collectors.toList());
     }
@@ -303,19 +315,9 @@ public class PlanService {
     }
 
     public List<PlanDto> getPlanesComunidad(Long comunidadId, Long userId) {
-        LocalDate hoy = LocalDate.now();
-        LocalTime ahora = LocalTime.now();
         return pertenenciaPlanComunidadRepository.findByIdComunidadId(comunidadId)
                 .stream()
-                .filter(ppc -> {
-                    Plan p = ppc.getPlan();
-                    if (p.getFechaEvento() == null) return true;
-                    if (p.getFechaEvento().isAfter(hoy)) return true;
-                    if (p.getFechaEvento().isBefore(hoy)) return false;
-                    if (p.getHoraHasta() != null) return !p.getHoraHasta().isBefore(ahora);
-                    if (p.getHoraEvento() != null) return !p.getHoraEvento().isBefore(ahora);
-                    return true;
-                })
+                .filter(ppc -> !planHaCaducado(ppc.getPlan()))
                 .map(ppc -> toDto(ppc.getPlan(), userId))
                 .collect(Collectors.toList());
     }
@@ -323,7 +325,25 @@ public class PlanService {
     public List<PlanDto> misPlanes(Long userId) {
         return participacionRepository.findByIdUsuarioId(userId)
                 .stream()
+                .filter(p -> !planHaCaducado(p.getPlan()))
                 .map(p -> toDto(p.getPlan(), userId))
+                .collect(Collectors.toList());
+    }
+
+    public List<PlanDto> historialPlanes(Long userId) {
+        return participacionRepository.findByIdUsuarioId(userId)
+                .stream()
+                .filter(p -> planHaCaducado(p.getPlan()))
+                .map(p -> toDto(p.getPlan(), userId))
+                .collect(Collectors.toList());
+    }
+
+    public List<PlanDto> planesCreados(Long userId) {
+        return planRepository.findAll()
+                .stream()
+                .filter(p -> p.getCreador() != null && p.getCreador().getId().equals(userId))
+                .filter(p -> !planHaCaducado(p))
+                .map(p -> toDto(p, userId))
                 .collect(Collectors.toList());
     }
 

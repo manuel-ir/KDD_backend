@@ -15,4 +15,5 @@ import java.util.List;
 public interface PertenenciaPlanComunidadRepository extends JpaRepository<PertenenciaPlanComunidad, PertenenciaPlanComunidadId> {
     List<PertenenciaPlanComunidad> findByIdComunidadId(Long comunidadId);
     boolean existsByIdPlanIdAndIdComunidadId(Long planId, Long comunidadId);
+    void deleteByIdPlanId(Long planId);
 }

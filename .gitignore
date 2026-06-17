@@ -10,3 +10,7 @@ NOTAS_INTERNAS.md
 CONTEXT.md
 build_docs.py
 *.docx
+
+# IntelliJ
+.idea/
+.gradle/

@@ -30,7 +30,6 @@ public class ValoracionService {
         Plan plan = planRepository.findById(dto.getIdPlan())
                 .orElseThrow(() -> new RuntimeException("Plan no encontrado"));
 
-        // Modo estricto: solo pueden valorar y ser valorados los marcados como presentes
         if (!participacionRepository.existsByIdUsuarioIdAndIdPlanIdAndPresenteTrue(valoradorId, dto.getIdPlan())) {
             throw new RuntimeException("Debes confirmar tu asistencia para poder valorar");
         }

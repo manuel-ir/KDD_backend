@@ -30,7 +30,6 @@ public class PlanController {
     private final PlanService planService;
     private final CategoriaRepository categoriaRepository;
 
-    // Devuelve todas las categorias existentes para usarlas en los filtros de la app
     @GetMapping("/categorias")
     public ResponseEntity<List<String>> getCategorias() {
         List<String> tipos = categoriaRepository.findAll()

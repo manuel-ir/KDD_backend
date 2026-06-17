@@ -48,13 +48,12 @@ public class PlanService {
         return planRepository.findAll()
                 .stream()
                 .filter(p -> {
-                    if (p.getFechaEvento() == null) return true;          // sin fecha → siempre visible
-                    if (p.getFechaEvento().isAfter(hoy)) return true;     // futuro
-                    if (p.getFechaEvento().isBefore(hoy)) return false;   // pasado (ayer o antes)
-                    // fechaEvento == hoy: ocultar si ya pasó la hora de fin o de inicio
+                    if (p.getFechaEvento() == null) return true;
+                    if (p.getFechaEvento().isAfter(hoy)) return true;
+                    if (p.getFechaEvento().isBefore(hoy)) return false;
                     if (p.getHoraHasta() != null) return !p.getHoraHasta().isBefore(ahora);
                     if (p.getHoraEvento() != null) return !p.getHoraEvento().isBefore(ahora);
-                    return true; // hoy sin ninguna hora → visible todo el día, desaparece mañana
+                    return true;
                 })
                 .map(p -> toDto(p, userId))
                 .collect(Collectors.toList());
@@ -180,7 +179,6 @@ public class PlanService {
         Plan plan = planRepository.findById(planId)
                 .orElseThrow(() -> new RuntimeException("Plan no encontrado"));
 
-        // Validación de edad
         if (usuario.getFechaNacimiento() != null && (plan.getEdadMin() != null || plan.getEdadMax() != null)) {
             int edad = Period.between(usuario.getFechaNacimiento(), LocalDate.now()).getYears();
             if (plan.getEdadMin() != null && edad < plan.getEdadMin()) {
@@ -191,7 +189,6 @@ public class PlanService {
             }
         }
 
-        // Aforo: cuenta usuarios distintos confirmados (acompañantes es solo informativo)
         int participantesActuales = participacionRepository.countByIdPlanIdAndEstado(planId, "confirmado");
         if (plan.getNumMaxPersonas() != null && participantesActuales >= plan.getNumMaxPersonas()) {
             throw new RuntimeException("El plan está completo");
@@ -230,8 +227,6 @@ public class PlanService {
                 .collect(Collectors.toList());
     }
 
-    // Solicitudes ya no aplica (todos entran con estado "confirmado"),
-    // se mantiene el endpoint vacío por compatibilidad
     public List<ParticipanteDto> getSolicitudes(Long planId, Long adminId) {
         Plan plan = planRepository.findById(planId)
                 .orElseThrow(() -> new RuntimeException("Plan no encontrado"));
@@ -245,7 +240,6 @@ public class PlanService {
         Plan plan = planRepository.findById(planId)
                 .orElseThrow(() -> new RuntimeException("Plan no encontrado"));
 
-        // Calcular si el plan ya ha comenzado (considerando horaEvento)
         boolean planHaComenzado;
         if (plan.getFechaEvento() == null) {
             planHaComenzado = true;
@@ -257,11 +251,10 @@ public class PlanService {
             } else if (fechaPlan.isAfter(hoy)) {
                 planHaComenzado = false;
             } else {
-                // Hoy: comprobar la hora de inicio
                 if (plan.getHoraEvento() != null) {
                     planHaComenzado = !LocalTime.now().isBefore(plan.getHoraEvento());
                 } else {
-                    planHaComenzado = true; // Sin hora → empieza al inicio del día
+                    planHaComenzado = true;
                 }
             }
         }
@@ -278,12 +271,10 @@ public class PlanService {
                 throw new RuntimeException("El plan aún no ha comenzado. Podrás confirmar tu asistencia " + cuandoEmpieza);
             }
             if (hayCreador) {
-                // Hay admin pero quien llama no es el admin: solo auto-confirmación
                 if (!esAutoConfirmacion) {
                     throw new RuntimeException("Solo el anfitrión puede confirmar la presencia de otros");
                 }
             }
-            // Sin admin o auto-confirmación: verificar que está apuntado
             if (!participacionRepository.existsByIdUsuarioIdAndIdPlanIdAndEstado(adminId, planId, "confirmado")) {
                 throw new RuntimeException("Debes estar apuntado al plan para confirmar presencia");
             }
@@ -294,11 +285,10 @@ public class PlanService {
                 .filter(x -> x.getUsuario().getId().equals(usuarioId))
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("Participante no encontrado"));
-        p.setPresente(!p.isPresente()); // toggle
+        p.setPresente(!p.isPresente());
         participacionRepository.save(p);
     }
 
-    // Mantener por compatibilidad con llamadas antiguas del frontend
     public void confirmarParticipante(Long adminId, Long planId, Long usuarioId) {
         marcarPresente(adminId, planId, usuarioId);
     }
@@ -322,7 +312,6 @@ public class PlanService {
                     if (p.getFechaEvento() == null) return true;
                     if (p.getFechaEvento().isAfter(hoy)) return true;
                     if (p.getFechaEvento().isBefore(hoy)) return false;
-                    // hoy: ocultar si ya paso la hora de fin o de inicio
                     if (p.getHoraHasta() != null) return !p.getHoraHasta().isBefore(ahora);
                     if (p.getHoraEvento() != null) return !p.getHoraEvento().isBefore(ahora);
                     return true;
@@ -347,8 +336,6 @@ public class PlanService {
             throw new RuntimeException("No estás apuntado a este plan");
         }
 
-        // Si es el creador, quita la referencia de creador antes de salir
-        // Si es el creador, quita la referencia de creador antes de salir
         if (plan.getCreador() != null && plan.getCreador().getId().equals(userId)) {
             plan.setCreador(null);
             planRepository.save(plan);
@@ -357,20 +344,11 @@ public class PlanService {
         participacionRepository.deleteByIdUsuarioIdAndIdPlanId(userId, planId);
     }
 
-    // Metodo auxiliar: convierte una entidad Plan al DTO que se envia al cliente
     private PlanDto toDto(Plan plan, Long userId) {
-        // Numero de participantes confirmados en este plan
         int numParticipantes = participacionRepository.countByIdPlanIdAndEstado(plan.getId(), "confirmado");
-
-        // El usuario esta apuntado al plan?
         boolean esMiembro = participacionRepository.existsByIdUsuarioIdAndIdPlanId(userId, plan.getId());
-
-        // El usuario es el creador del plan?
         boolean esCreador = plan.getCreador() != null && plan.getCreador().getId().equals(userId);
 
-        // Puntuacion media del creador
-
-        // Nombre del anfitrion: alias si tiene, si no nombre real
         String nombreAnfitrion = null;
         if (plan.getCreador() != null) {
             nombreAnfitrion = plan.getCreador().getNombreUsuario() != null
@@ -403,13 +381,11 @@ public class PlanService {
                 .build();
     }
 
-    // Convierte "yyyy-MM-dd" a LocalDate; devuelve null si el valor es vacio o invalido
     private LocalDate parseFecha(String s) {
         if (s == null || s.isBlank()) return null;
         try { return LocalDate.parse(s); } catch (Exception e) { return null; }
     }
 
-    // Convierte "HH:mm" o "HH:mm:ss" a LocalTime; devuelve null si el valor es vacio o invalido
     private LocalTime parseHora(String s) {
         if (s == null || s.isBlank()) return null;
         try {

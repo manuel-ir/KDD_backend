@@ -2,9 +2,9 @@ spring:
   application:
     name: kdd_backend
   datasource:
-    url: jdbc:mysql://localhost:3306/kdd?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-    username: root
-    password: 1234
+    url: ${DB_URL:jdbc:mysql://localhost:3306/kdd?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:1234}
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
@@ -16,14 +16,12 @@ spring:
   jackson:
     serialization:
       fail-on-empty-beans: false
-
 server:
   port: 8080
-
 app:
   jwt:
-    secret: KDD-SecretKey-Para-Token-JWT-2024-MuyLargoYSeguro-Minimo256BitsParaHS256
+    secret: ${JWT_SECRET:KDD-SecretKey-Para-Token-JWT-2024-MuyLargoYSeguro-Minimo256BitsParaHS256}
     expiration-ms: 86400000
   google:
-    api-key: AIzaSyDnIc1lQvaPuN9lfkJkuWJn3mC_ijYZxYo
-    client-id: 1045671394809-32or29g8gilr4gs2rm29j2o58u9mkujh.apps.googleusercontent.com
+    api-key: ${GOOGLE_API_KEY:}
+    client-id: ${GOOGLE_CLIENT_ID:1045671394809-32or29g8gilr4gs2rm29j2o58u9mkujh.apps.googleusercontent.com}

@@ -13,6 +13,13 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Servicio de gestion de amistades entre usuarios.
+ *
+ * Implementa el ciclo completo: enviar solicitud (estado "pendiente"),
+ * aceptar (estado "confirmado") y eliminar la relacion.
+ * Impide autosolicitarse y duplicar relaciones existentes.
+ */
 @Service
 @RequiredArgsConstructor
 public class AmistadService {
@@ -28,6 +35,12 @@ public class AmistadService {
 
     public List<AmistadDto> listarSolicitudes(Long userId) {
         return amistadRepository.findSolicitudesPendientes(userId).stream()
+                .map(a -> toDto(a, userId))
+                .collect(Collectors.toList());
+    }
+
+    public List<AmistadDto> listarEnviadas(Long userId) {
+        return amistadRepository.findSolicitudesEnviadas(userId).stream()
                 .map(a -> toDto(a, userId))
                 .collect(Collectors.toList());
     }

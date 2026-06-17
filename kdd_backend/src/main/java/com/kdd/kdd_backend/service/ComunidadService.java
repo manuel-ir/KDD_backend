@@ -15,6 +15,13 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Servicio con la logica de negocio de las comunidades.
+ *
+ * Permite crear comunidades, unirse y abandonarlas, consultar
+ * la lista de miembros y los planes asociados. Valida la edad
+ * del usuario al intentar unirse si la comunidad tiene restriccion.
+ */
 @Service
 @RequiredArgsConstructor
 public class ComunidadService {
@@ -47,6 +54,8 @@ public class ComunidadService {
                 .ubicacion(dto.getUbicacion())
                 .edadMin(dto.getEdadMin())
                 .edadMax(dto.getEdadMax())
+                .fotoComunidadUrl(dto.getFotoComunidadUrl())
+                .categoria(dto.getCategoria())
                 .admin(admin)
                 .build();
 
@@ -72,13 +81,12 @@ public class ComunidadService {
         Comunidad comunidad = comunidadRepository.findById(comunidadId)
                 .orElseThrow(() -> new RuntimeException("Comunidad no encontrada"));
 
-        if (usuario.getEdad() != null) {
-            if (comunidad.getEdadMin() != null && usuario.getEdad() < comunidad.getEdadMin()) {
-                throw new RuntimeException("No cumples la edad mínima para esta comunidad");
-            }
-            if (comunidad.getEdadMax() != null && usuario.getEdad() > comunidad.getEdadMax()) {
-                throw new RuntimeException("Superas la edad máxima para esta comunidad");
-            }
+        if (usuario.getFechaNacimiento() != null) {
+            int edad = Period.between(usuario.getFechaNacimiento(), LocalDate.now()).getYears();
+            if (comunidad.getEdadMin() != null && edad < comunidad.getEdadMin())
+                throw new RuntimeException("No cumples la edad mínima de esta comunidad (" + comunidad.getEdadMin() + " años)");
+            if (comunidad.getEdadMax() != null && edad > comunidad.getEdadMax())
+                throw new RuntimeException("No cumples la edad máxima de esta comunidad (" + comunidad.getEdadMax() + " años)");
         }
 
         PertenenciaComunidad pertenencia = new PertenenciaComunidad();
@@ -94,16 +102,22 @@ public class ComunidadService {
         Comunidad comunidad = comunidadRepository.findById(comunidadId)
                 .orElseThrow(() -> new RuntimeException("Comunidad no encontrada"));
 
+        if (comunidad.getAdmin() != null && comunidad.getAdmin().getId().equals(userId)) {
+            throw new RuntimeException("El admin no puede abandonar su propia comunidad");
+        }
+
         if (!pertenenciaRepository.existsByIdUsuarioIdAndIdComunidadId(userId, comunidadId)) {
             throw new RuntimeException("No perteneces a esta comunidad");
         }
 
-        if (comunidad.getAdmin() != null && comunidad.getAdmin().getId().equals(userId)) {
-            comunidad.setAdmin(null);
-            comunidadRepository.save(comunidad);
-        }
-
         pertenenciaRepository.deleteByIdUsuarioIdAndIdComunidadId(userId, comunidadId);
+    }
+
+    public List<ComunidadDto> misComunidades(Long userId) {
+        return pertenenciaRepository.findByIdUsuarioId(userId)
+                .stream()
+                .map(p -> toDto(p.getComunidad(), userId))
+                .collect(Collectors.toList());
     }
 
     public List<MiembroComunidadDto> getMiembros(Long comunidadId) {
@@ -141,6 +155,8 @@ public class ComunidadService {
                 .numMiembros(pertenenciaRepository.countByIdComunidadId(c.getId()))
                 .miembro(esMiembro)
                 .admin(esAdmin)
+                .fotoComunidadUrl(c.getFotoComunidadUrl())
+                .categoria(c.getCategoria())
                 .build();
     }
 }

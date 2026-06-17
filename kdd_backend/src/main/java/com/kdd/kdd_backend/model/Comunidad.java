@@ -4,6 +4,13 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
 
+/**
+ * Entidad que representa una comunidad de usuarios.
+ *
+ * Mapea la tabla "comunidades". Una comunidad tiene un administrador
+ * (el usuario que la creo) y puede tener restriccion de edad.
+ * Los planes pueden asociarse a una comunidad.
+ */
 @Entity
 @Table(name = "comunidades")
 @Data
@@ -32,6 +39,11 @@ public class Comunidad {
 
     @Column(name = "edad_max")
     private Integer edadMax;
+
+    @Column(name = "foto_comunidad_url")
+    private String fotoComunidadUrl;
+
+    private String categoria;
 
     @ManyToOne
     @JoinColumn(name = "id_admin")

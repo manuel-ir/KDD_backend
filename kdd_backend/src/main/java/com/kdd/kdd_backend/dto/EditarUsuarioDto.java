@@ -2,6 +2,10 @@ package com.kdd.kdd_backend.dto;
 
 import lombok.*;
 
+/**
+ * DTO con los campos que el usuario puede modificar en su perfil.
+ * Los campos nulos se ignoran: solo se actualizan los que vienen informados.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

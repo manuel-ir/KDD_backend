@@ -8,6 +8,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * Controlador de operaciones sobre el perfil del usuario.
+ *
+ * Gestiona la consulta y edicion del perfil del usuario autenticado,
+ * asi como la consulta del perfil de otros usuarios.
+ *
+ * Todos los endpoints requieren JWT valido en la cabecera Authorization.
+ */
 @RestController
 @RequestMapping("/api/usuarios")
 @RequiredArgsConstructor

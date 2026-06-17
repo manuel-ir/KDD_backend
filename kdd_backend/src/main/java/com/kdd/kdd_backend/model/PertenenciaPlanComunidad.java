@@ -4,6 +4,12 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
 
+/**
+ * Entidad que representa la asociacion de un plan a una comunidad.
+ *
+ * Mapea la tabla "pertenencias_plan_comunidad" (relacion N:M entre Plan y Comunidad).
+ * Cuando se crea un plan desde la pantalla de una comunidad, se registra aqui.
+ */
 @Entity
 @Table(name = "pertenencias_plan_comunidad")
 @Data

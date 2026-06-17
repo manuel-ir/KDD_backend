@@ -4,6 +4,13 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
 
+/**
+ * Entidad que representa la pertenencia de un usuario a una comunidad.
+ *
+ * Mapea la tabla "pertenencias_comunidad" (relacion N:M entre Usuario y Comunidad).
+ * La clave primaria es compuesta (id_usuario, id_comunidad).
+ * El campo "estado" puede ser "pendiente" o "confirmado".
+ */
 @Entity
 @Table(name = "pertenencias_comunidad")
 @Data

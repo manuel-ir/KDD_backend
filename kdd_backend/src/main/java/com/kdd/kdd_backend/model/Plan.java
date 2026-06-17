@@ -6,6 +6,16 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
+/**
+ * Entidad que representa un plan o actividad creado por un usuario.
+ *
+ * Mapea la tabla "planes". Cada plan tiene un creador (anfitrion),
+ * una categoria, una fecha y hora de inicio opcionales, y una hora
+ * de fin (horaHasta) que determina cuando desaparece de la pantalla Explora.
+ *
+ * El aforo maximo (numMaxPersonas) limita cuantos usuarios pueden apuntarse.
+ * Por defecto se establece en 10 si no se especifica.
+ */
 @Entity
 @Table(name = "planes")
 @Data
@@ -30,6 +40,9 @@ public class Plan {
     @Column(name = "hora_evento")
     private LocalTime horaEvento;
 
+    @Column(name = "hora_hasta")
+    private LocalTime horaHasta;
+
     @Column(name = "ubicacion_texto")
     private String ubicacionTexto;
 
@@ -53,8 +66,8 @@ public class Plan {
 
     private Double longitud;
 
-    @Column(name = "imagen_url")
-    private String imagenUrl;
+    @Column(name = "foto_plan_url")
+    private String fotoPlanUrl;
 
     @ManyToOne
     @JoinColumn(name = "id_creador")

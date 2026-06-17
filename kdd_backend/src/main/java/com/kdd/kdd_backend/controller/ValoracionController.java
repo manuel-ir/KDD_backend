@@ -7,6 +7,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * Controlador de valoraciones entre participantes de un plan.
+ *
+ * Permite a un usuario valorar a otro con una puntuacion del 1 al 5,
+ * siempre que ambos hayan confirmado su presencia en el mismo plan.
+ *
+ * Todos los endpoints requieren JWT valido.
+ */
 @RestController
 @RequestMapping("/api/valoraciones")
 @RequiredArgsConstructor

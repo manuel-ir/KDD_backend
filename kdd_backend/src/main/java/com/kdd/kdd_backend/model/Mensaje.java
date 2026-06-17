@@ -4,6 +4,13 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
 
+/**
+ * Entidad que representa un mensaje directo entre dos usuarios.
+ *
+ * Mapea la tabla "mensajes". Cada mensaje tiene un emisor y un receptor,
+ * un contenido de texto y la fecha y hora de envio.
+ * No hay conversaciones en grupo: los mensajes son siempre 1 a 1.
+ */
 @Entity
 @Table(name = "mensajes")
 @Data

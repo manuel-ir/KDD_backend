@@ -10,6 +10,14 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Repositorio JPA para la entidad Amistad.
+ *
+ * Incluye consultas personalizadas para buscar amigos confirmados,
+ * solicitudes pendientes recibidas y solicitudes enviadas por el usuario.
+ * La relacion es unidireccional en la BD, por lo que las consultas
+ * buscan en ambas direcciones (usuario->amigo y amigo->usuario).
+ */
 @Repository
 public interface AmistadRepository extends JpaRepository<Amistad, AmistadId> {
 
@@ -18,6 +26,9 @@ public interface AmistadRepository extends JpaRepository<Amistad, AmistadId> {
 
     @Query("SELECT a FROM Amistad a WHERE a.id.amigoId = :uid AND a.estado = 'pendiente'")
     List<Amistad> findSolicitudesPendientes(@Param("uid") Long uid);
+
+    @Query("SELECT a FROM Amistad a WHERE a.id.usuarioId = :uid AND a.estado = 'pendiente'")
+    List<Amistad> findSolicitudesEnviadas(@Param("uid") Long uid);
 
     @Query("SELECT a FROM Amistad a WHERE (a.id.usuarioId = :u1 AND a.id.amigoId = :u2) OR (a.id.usuarioId = :u2 AND a.id.amigoId = :u1)")
     Optional<Amistad> findRelacion(@Param("u1") Long u1, @Param("u2") Long u2);

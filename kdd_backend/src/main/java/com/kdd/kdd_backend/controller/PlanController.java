@@ -3,8 +3,8 @@ package com.kdd.kdd_backend.controller;
 import com.kdd.kdd_backend.dto.CrearPlanDto;
 import com.kdd.kdd_backend.dto.ParticipanteDto;
 import com.kdd.kdd_backend.dto.PlanDto;
-import java.util.List;
-import java.util.Map;
+import com.kdd.kdd_backend.model.Categoria;
+import com.kdd.kdd_backend.repository.CategoriaRepository;
 import com.kdd.kdd_backend.service.PlanService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -13,16 +13,37 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * Controlador de planes (actividades).
+ *
+ * Expone los endpoints REST para crear, listar, editar, eliminar y
+ * gestionar la participacion en planes. Tambien incluye los endpoints
+ * para marcar presencia y consultar participantes.
+ *
+ * Todos los endpoints requieren JWT valido.
+ */
 @RestController
 @RequestMapping("/api/planes")
 @RequiredArgsConstructor
 public class PlanController {
 
     private final PlanService planService;
+    private final CategoriaRepository categoriaRepository;
+
+    @GetMapping("/categorias")
+    public ResponseEntity<List<String>> getCategorias() {
+        List<String> tipos = categoriaRepository.findAll()
+                .stream()
+                .map(Categoria::getTipo)
+                .sorted()
+                .collect(java.util.stream.Collectors.toList());
+        return ResponseEntity.ok(tipos);
+    }
 
     @GetMapping
-    public ResponseEntity<List<PlanDto>> listar() {
-        return ResponseEntity.ok(planService.listarPlanes());
+    public ResponseEntity<List<PlanDto>> listar(Authentication auth) {
+        Long userId = auth != null ? (Long) auth.getPrincipal() : null;
+        return ResponseEntity.ok(planService.listarPlanes(userId));
     }
 
     @GetMapping("/mis-planes")
@@ -44,6 +65,19 @@ public class PlanController {
         return ResponseEntity.ok(planService.crearPlan(userId, dto));
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<PlanDto> editar(Authentication auth, @PathVariable Long id, @RequestBody CrearPlanDto dto) {
+        Long userId = (Long) auth.getPrincipal();
+        return ResponseEntity.ok(planService.editarPlan(userId, id, dto));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminar(Authentication auth, @PathVariable Long id) {
+        Long userId = (Long) auth.getPrincipal();
+        planService.eliminarPlan(userId, id);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/{id}/participantes")
     public ResponseEntity<List<ParticipanteDto>> participantes(@PathVariable Long id) {
         return ResponseEntity.ok(planService.getParticipantes(id));
@@ -59,6 +93,13 @@ public class PlanController {
     public ResponseEntity<Void> confirmar(Authentication auth, @PathVariable Long id, @PathVariable Long usuarioId) {
         Long userId = (Long) auth.getPrincipal();
         planService.confirmarParticipante(userId, id, usuarioId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/{id}/participantes/{usuarioId}/presente")
+    public ResponseEntity<Void> marcarPresente(Authentication auth, @PathVariable Long id, @PathVariable Long usuarioId) {
+        Long userId = (Long) auth.getPrincipal();
+        planService.marcarPresente(userId, id, usuarioId);
         return ResponseEntity.ok().build();
     }
 
@@ -81,33 +122,5 @@ public class PlanController {
         Long userId = (Long) auth.getPrincipal();
         planService.abandonar(userId, id);
         return ResponseEntity.ok().build();
-    }
-
-    @PutMapping("/{id}/foto")
-    public ResponseEntity<Void> actualizarFoto(Authentication auth, @PathVariable Long id,
-                                               @RequestBody Map<String, String> body) {
-        Long userId = (Long) auth.getPrincipal();
-        planService.actualizarFotoPlan(id, userId, body.get("imagenUrl"));
-        return ResponseEntity.ok().build();
-    }
-
-    @GetMapping("/historial")
-    public ResponseEntity<List<PlanDto>> historial(Authentication auth) {
-        Long userId = (Long) auth.getPrincipal();
-        return ResponseEntity.ok(planService.getHistorial(userId));
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(Authentication auth, @PathVariable Long id) {
-        Long userId = (Long) auth.getPrincipal();
-        planService.eliminarPlan(id, userId);
-        return ResponseEntity.ok().build();
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<PlanDto> editar(Authentication auth, @PathVariable Long id,
-                                          @RequestBody CrearPlanDto dto) {
-        Long userId = (Long) auth.getPrincipal();
-        return ResponseEntity.ok(planService.editarPlan(id, userId, dto));
     }
 }

@@ -6,7 +6,7 @@ KDD_frontend/
 *.pdf
 NOTAS_INTERNAS.md
 
-# Archivos de contexto y scripts de IA
+# Archivos temporales y de configuracion local
 CONTEXT.md
 build_docs.py
 *.docx

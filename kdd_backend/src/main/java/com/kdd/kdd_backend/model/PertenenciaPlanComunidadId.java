@@ -3,6 +3,10 @@ package com.kdd.kdd_backend.model;
 import lombok.*;
 import java.io.Serializable;
 
+/**
+ * Clave primaria compuesta para PertenenciaPlanComunidad.
+ * Agrupa los ids de plan y comunidad.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

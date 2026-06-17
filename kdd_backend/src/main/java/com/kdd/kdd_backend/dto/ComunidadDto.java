@@ -2,6 +2,10 @@ package com.kdd.kdd_backend.dto;
 
 import lombok.*;
 
+/**
+ * DTO con los datos de una comunidad para enviar al cliente.
+ * Incluye si el usuario autenticado es miembro o administrador.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -18,4 +22,6 @@ public class ComunidadDto {
     private int numMiembros;
     private boolean miembro;
     private boolean admin;
+    private String fotoComunidadUrl;
+    private String categoria;
 }

@@ -13,6 +13,14 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * Controlador de comunidades.
+ *
+ * Gestiona la creacion, consulta, union y abandono de comunidades.
+ * Tambien permite obtener la lista de miembros de una comunidad.
+ *
+ * Todos los endpoints requieren JWT valido.
+ */
 @RestController
 @RequestMapping("/api/comunidades")
 @RequiredArgsConstructor
@@ -24,6 +32,12 @@ public class ComunidadController {
     @GetMapping
     public ResponseEntity<List<ComunidadDto>> listar() {
         return ResponseEntity.ok(comunidadService.listar());
+    }
+
+    @GetMapping("/mis-comunidades")
+    public ResponseEntity<List<ComunidadDto>> misComunidades(Authentication auth) {
+        Long userId = (Long) auth.getPrincipal();
+        return ResponseEntity.ok(comunidadService.misComunidades(userId));
     }
 
     @GetMapping("/{id}")

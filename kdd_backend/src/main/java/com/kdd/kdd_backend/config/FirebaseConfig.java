@@ -9,6 +9,14 @@ import jakarta.annotation.PostConstruct;
 import java.io.IOException;
 import java.io.InputStream;
 
+/**
+ * Configuracion de Firebase Admin SDK.
+ *
+ * Inicializa la conexion con Firebase usando el archivo de credenciales
+ * del servidor (firebase-service-account.json). Este archivo NUNCA debe
+ * subirse a GitHub. Se usa para verificar los tokens de Google Sign-In
+ * que llegan desde la aplicacion Android.
+ */
 @Configuration
 public class FirebaseConfig {
 

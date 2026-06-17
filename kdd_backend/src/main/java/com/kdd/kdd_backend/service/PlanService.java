@@ -12,10 +12,24 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.Period;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Servicio con toda la logica de negocio de los planes (actividades).
+ *
+ * Funcionalidades principales:
+ * - Listar planes disponibles, filtrando los que ya han terminado.
+ * - Crear, editar y eliminar planes.
+ * - Gestionar la participacion: unirse y abandonar.
+ * - Controlar el aforo: maximo de participantes confirmados.
+ * - Validar la edad de los participantes segun el rango del plan.
+ * - Marcar presencia: con logica estricta de tiempo de inicio.
+ * - Obtener la lista de participantes y sus datos.
+ */
 @Service
 @RequiredArgsConstructor
 public class PlanService {
@@ -26,11 +40,23 @@ public class PlanService {
     private final ParticipacionRepository participacionRepository;
     private final PertenenciaPlanComunidadRepository pertenenciaPlanComunidadRepository;
     private final ComunidadRepository comunidadRepository;
+    private final ValoracionRepository valoracionRepository;
 
-    public List<PlanDto> listarPlanes() {
+    public List<PlanDto> listarPlanes(Long userId) {
+        LocalDate hoy = LocalDate.now();
+        LocalTime ahora = LocalTime.now();
         return planRepository.findAll()
                 .stream()
-                .map(p -> toDto(p, null))
+                .filter(p -> {
+                    if (p.getFechaEvento() == null) return true;          // sin fecha → siempre visible
+                    if (p.getFechaEvento().isAfter(hoy)) return true;     // futuro
+                    if (p.getFechaEvento().isBefore(hoy)) return false;   // pasado (ayer o antes)
+                    // fechaEvento == hoy: ocultar si ya pasó la hora de fin o de inicio
+                    if (p.getHoraHasta() != null) return !p.getHoraHasta().isBefore(ahora);
+                    if (p.getHoraEvento() != null) return !p.getHoraEvento().isBefore(ahora);
+                    return true; // hoy sin ninguna hora → visible todo el día, desaparece mañana
+                })
+                .map(p -> toDto(p, userId))
                 .collect(Collectors.toList());
     }
 
@@ -57,13 +83,17 @@ public class PlanService {
         Plan plan = Plan.builder()
                 .titulo(dto.getTitulo())
                 .descripcion(dto.getDescripcion())
-                .fechaEvento(dto.getFechaEvento())
-                .horaEvento(dto.getHoraEvento())
+                .fechaEvento(parseFecha(dto.getFechaEvento()))
+                .horaEvento(parseHora(dto.getHoraEvento()))
+                .horaHasta(parseHora(dto.getHoraHasta()))
                 .ubicacionTexto(dto.getUbicacionTexto())
                 .edadMin(dto.getEdadMin())
                 .edadMax(dto.getEdadMax())
                 .numMaxPersonas(dto.getNumMaxPersonas())
                 .idioma(dto.getIdioma())
+                .latitud(dto.getLatitud())
+                .longitud(dto.getLongitud())
+                .fotoPlanUrl(dto.getFotoPlanUrl())
                 .creador(creador)
                 .categoria(categoria)
                 .build();
@@ -75,6 +105,7 @@ public class PlanService {
         participacion.setUsuario(creador);
         participacion.setPlan(plan);
         participacion.setEstado("confirmado");
+        participacion.setAcompanantes(dto.getAcompanantes() != null ? dto.getAcompanantes() : 1);
         participacionRepository.save(participacion);
 
         if (dto.getComunidadId() != null) {
@@ -91,6 +122,54 @@ public class PlanService {
         return toDto(plan, userId);
     }
 
+    public PlanDto editarPlan(Long userId, Long planId, CrearPlanDto dto) {
+        Plan plan = planRepository.findById(planId)
+                .orElseThrow(() -> new RuntimeException("Plan no encontrado"));
+        if (plan.getCreador() == null || !plan.getCreador().getId().equals(userId)) {
+            throw new RuntimeException("Solo el creador puede editar el plan");
+        }
+        plan.setTitulo(dto.getTitulo());
+        plan.setDescripcion(dto.getDescripcion());
+        plan.setFechaEvento(parseFecha(dto.getFechaEvento()));
+        plan.setHoraEvento(parseHora(dto.getHoraEvento()));
+        plan.setHoraHasta(parseHora(dto.getHoraHasta()));
+        plan.setUbicacionTexto(dto.getUbicacionTexto());
+        plan.setEdadMin(dto.getEdadMin());
+        plan.setEdadMax(dto.getEdadMax());
+        plan.setNumMaxPersonas(dto.getNumMaxPersonas());
+        plan.setIdioma(dto.getIdioma());
+        plan.setLatitud(dto.getLatitud());
+        plan.setLongitud(dto.getLongitud());
+        if (dto.getFotoPlanUrl() != null) plan.setFotoPlanUrl(dto.getFotoPlanUrl());
+        if (dto.getCategoria() != null) {
+            Categoria categoria = categoriaRepository.findAll().stream()
+                    .filter(c -> c.getTipo().equalsIgnoreCase(dto.getCategoria()))
+                    .findFirst()
+                    .orElseGet(() -> {
+                        Categoria nueva = new Categoria();
+                        nueva.setTipo(dto.getCategoria());
+                        return categoriaRepository.save(nueva);
+                    });
+            plan.setCategoria(categoria);
+        }
+        return toDto(planRepository.save(plan), userId);
+    }
+
+    @Transactional
+    public void eliminarPlan(Long userId, Long planId) {
+        Plan plan = planRepository.findById(planId)
+                .orElseThrow(() -> new RuntimeException("Plan no encontrado"));
+        if (plan.getCreador() == null || !plan.getCreador().getId().equals(userId)) {
+            throw new RuntimeException("Solo el creador puede eliminar el plan");
+        }
+        long otrosParticipantes = participacionRepository.countByIdPlanId(planId) - 1;
+        if (otrosParticipantes > 0) {
+            throw new RuntimeException("No puedes eliminar el plan mientras haya " + otrosParticipantes + " participante" + (otrosParticipantes == 1 ? "" : "s") + " apuntado" + (otrosParticipantes == 1 ? "" : "s"));
+        }
+        participacionRepository.deleteByIdPlanId(planId);
+        planRepository.deleteById(planId);
+    }
+
     public void unirse(Long userId, Long planId) {
         if (participacionRepository.existsByIdUsuarioIdAndIdPlanId(userId, planId)) {
             throw new RuntimeException("Ya estás apuntado a este plan");
@@ -101,8 +180,20 @@ public class PlanService {
         Plan plan = planRepository.findById(planId)
                 .orElseThrow(() -> new RuntimeException("Plan no encontrado"));
 
-        int actuales = participacionRepository.countByIdPlanId(planId);
-        if (plan.getNumMaxPersonas() != null && actuales >= plan.getNumMaxPersonas()) {
+        // Validación de edad
+        if (usuario.getFechaNacimiento() != null && (plan.getEdadMin() != null || plan.getEdadMax() != null)) {
+            int edad = Period.between(usuario.getFechaNacimiento(), LocalDate.now()).getYears();
+            if (plan.getEdadMin() != null && edad < plan.getEdadMin()) {
+                throw new RuntimeException("No cumples la edad mínima de este plan (" + plan.getEdadMin() + " años)");
+            }
+            if (plan.getEdadMax() != null && edad > plan.getEdadMax()) {
+                throw new RuntimeException("No cumples la edad máxima de este plan (" + plan.getEdadMax() + " años)");
+            }
+        }
+
+        // Aforo: cuenta usuarios distintos confirmados (acompañantes es solo informativo)
+        int participantesActuales = participacionRepository.countByIdPlanIdAndEstado(planId, "confirmado");
+        if (plan.getNumMaxPersonas() != null && participantesActuales >= plan.getNumMaxPersonas()) {
             throw new RuntimeException("El plan está completo");
         }
 
@@ -110,7 +201,8 @@ public class PlanService {
         participacion.setId(new ParticipacionId(userId, planId));
         participacion.setUsuario(usuario);
         participacion.setPlan(plan);
-        participacion.setEstado("pendiente");
+        participacion.setEstado("confirmado");
+        participacion.setAcompanantes(1);
         participacionRepository.save(participacion);
     }
 
@@ -122,69 +214,119 @@ public class PlanService {
                     Integer edad = u.getFechaNacimiento() != null
                             ? Period.between(u.getFechaNacimiento(), LocalDate.now()).getYears()
                             : null;
+                    Double media = valoracionRepository.findMediaPuntuacionByIdValorado(u.getId());
                     return ParticipanteDto.builder()
                             .id(u.getId())
                             .nombre(u.getNombre())
+                            .nombreUsuario(u.getNombreUsuario())
                             .edad(edad)
                             .descripcion(u.getDescripcion())
                             .fotoPerfil(u.getFotoPerfil())
+                            .presente(p.isPresente())
+                            .puntuacion(media)
+                            .acompanantes(p.getAcompanantes())
                             .build();
                 })
                 .collect(Collectors.toList());
     }
 
+    // Solicitudes ya no aplica (todos entran con estado "confirmado"),
+    // se mantiene el endpoint vacío por compatibilidad
     public List<ParticipanteDto> getSolicitudes(Long planId, Long adminId) {
         Plan plan = planRepository.findById(planId)
                 .orElseThrow(() -> new RuntimeException("Plan no encontrado"));
         if (plan.getCreador() == null || !plan.getCreador().getId().equals(adminId)) {
             throw new RuntimeException("Solo el anfitrión puede ver las solicitudes");
         }
-        return participacionRepository.findByIdPlanIdAndEstado(planId, "pendiente")
-                .stream()
-                .map(p -> {
-                    Usuario u = p.getUsuario();
-                    Integer edad = u.getFechaNacimiento() != null
-                            ? Period.between(u.getFechaNacimiento(), LocalDate.now()).getYears()
-                            : null;
-                    return ParticipanteDto.builder()
-                            .id(u.getId())
-                            .nombre(u.getNombre())
-                            .edad(edad)
-                            .descripcion(u.getDescripcion())
-                            .fotoPerfil(u.getFotoPerfil())
-                            .build();
-                })
-                .collect(Collectors.toList());
+        return java.util.Collections.emptyList();
     }
 
-    public void confirmarParticipante(Long adminId, Long planId, Long usuarioId) {
+    public void marcarPresente(Long adminId, Long planId, Long usuarioId) {
         Plan plan = planRepository.findById(planId)
                 .orElseThrow(() -> new RuntimeException("Plan no encontrado"));
-        if (plan.getCreador() == null || !plan.getCreador().getId().equals(adminId)) {
-            throw new RuntimeException("Solo el anfitrión puede confirmar participantes");
+
+        // Calcular si el plan ya ha comenzado (considerando horaEvento)
+        boolean planHaComenzado;
+        if (plan.getFechaEvento() == null) {
+            planHaComenzado = true;
+        } else {
+            LocalDate hoy = LocalDate.now();
+            LocalDate fechaPlan = plan.getFechaEvento();
+            if (fechaPlan.isBefore(hoy)) {
+                planHaComenzado = true;
+            } else if (fechaPlan.isAfter(hoy)) {
+                planHaComenzado = false;
+            } else {
+                // Hoy: comprobar la hora de inicio
+                if (plan.getHoraEvento() != null) {
+                    planHaComenzado = !LocalTime.now().isBefore(plan.getHoraEvento());
+                } else {
+                    planHaComenzado = true; // Sin hora → empieza al inicio del día
+                }
+            }
+        }
+
+        boolean esAutoConfirmacion = adminId.equals(usuarioId);
+        boolean hayCreador = plan.getCreador() != null;
+        boolean esAdmin = hayCreador && plan.getCreador().getId().equals(adminId);
+
+        if (!esAdmin) {
+            if (!planHaComenzado) {
+                String cuandoEmpieza = plan.getHoraEvento() != null
+                        ? "a las " + plan.getHoraEvento().toString().substring(0, 5)
+                        : "en la fecha del plan";
+                throw new RuntimeException("El plan aún no ha comenzado. Podrás confirmar tu asistencia " + cuandoEmpieza);
+            }
+            if (hayCreador) {
+                // Hay admin pero quien llama no es el admin: solo auto-confirmación
+                if (!esAutoConfirmacion) {
+                    throw new RuntimeException("Solo el anfitrión puede confirmar la presencia de otros");
+                }
+            }
+            // Sin admin o auto-confirmación: verificar que está apuntado
+            if (!participacionRepository.existsByIdUsuarioIdAndIdPlanIdAndEstado(adminId, planId, "confirmado")) {
+                throw new RuntimeException("Debes estar apuntado al plan para confirmar presencia");
+            }
         }
         Participacion p = participacionRepository
-                .findByIdPlanIdAndEstado(planId, "pendiente")
+                .findByIdPlanIdAndEstado(planId, "confirmado")
                 .stream()
                 .filter(x -> x.getUsuario().getId().equals(usuarioId))
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("Solicitud no encontrada"));
-        p.setEstado("confirmado");
+                .orElseThrow(() -> new RuntimeException("Participante no encontrado"));
+        p.setPresente(!p.isPresente()); // toggle
         participacionRepository.save(p);
+    }
+
+    // Mantener por compatibilidad con llamadas antiguas del frontend
+    public void confirmarParticipante(Long adminId, Long planId, Long usuarioId) {
+        marcarPresente(adminId, planId, usuarioId);
     }
 
     public void rechazarParticipante(Long adminId, Long planId, Long usuarioId) {
         Plan plan = planRepository.findById(planId)
                 .orElseThrow(() -> new RuntimeException("Plan no encontrado"));
         if (plan.getCreador() == null || !plan.getCreador().getId().equals(adminId)) {
-            throw new RuntimeException("Solo el anfitrión puede rechazar participantes");
+            throw new RuntimeException("Solo el anfitrión puede eliminar participantes");
         }
         participacionRepository.deleteByIdUsuarioIdAndIdPlanId(usuarioId, planId);
     }
 
     public List<PlanDto> getPlanesComunidad(Long comunidadId, Long userId) {
+        LocalDate hoy = LocalDate.now();
+        LocalTime ahora = LocalTime.now();
         return pertenenciaPlanComunidadRepository.findByIdComunidadId(comunidadId)
                 .stream()
+                .filter(ppc -> {
+                    Plan p = ppc.getPlan();
+                    if (p.getFechaEvento() == null) return true;
+                    if (p.getFechaEvento().isAfter(hoy)) return true;
+                    if (p.getFechaEvento().isBefore(hoy)) return false;
+                    // hoy: ocultar si ya paso la hora de fin o de inicio
+                    if (p.getHoraHasta() != null) return !p.getHoraHasta().isBefore(ahora);
+                    if (p.getHoraEvento() != null) return !p.getHoraEvento().isBefore(ahora);
+                    return true;
+                })
                 .map(ppc -> toDto(ppc.getPlan(), userId))
                 .collect(Collectors.toList());
     }
@@ -201,39 +343,78 @@ public class PlanService {
         Plan plan = planRepository.findById(planId)
                 .orElseThrow(() -> new RuntimeException("Plan no encontrado"));
 
-        if (plan.getCreador() != null && plan.getCreador().getId().equals(userId)) {
-            throw new RuntimeException("El creador no puede abandonar su propio plan");
-        }
-
         if (!participacionRepository.existsByIdUsuarioIdAndIdPlanId(userId, planId)) {
             throw new RuntimeException("No estás apuntado a este plan");
+        }
+
+        // Si es el creador, quita la referencia de creador antes de salir
+        // Si es el creador, quita la referencia de creador antes de salir
+        if (plan.getCreador() != null && plan.getCreador().getId().equals(userId)) {
+            plan.setCreador(null);
+            planRepository.save(plan);
         }
 
         participacionRepository.deleteByIdUsuarioIdAndIdPlanId(userId, planId);
     }
 
-    private PlanDto toDto(Plan p, Long userId) {
-        boolean esMiembro = userId != null && participacionRepository.existsByIdUsuarioIdAndIdPlanId(userId, p.getId());
-        boolean esCreador = userId != null && p.getCreador() != null && p.getCreador().getId().equals(userId);
-        boolean esPendiente = userId != null && !esCreador
-                && participacionRepository.existsByIdUsuarioIdAndIdPlanIdAndEstado(userId, p.getId(), "pendiente");
+    // Metodo auxiliar: convierte una entidad Plan al DTO que se envia al cliente
+    private PlanDto toDto(Plan plan, Long userId) {
+        // Numero de participantes confirmados en este plan
+        int numParticipantes = participacionRepository.countByIdPlanIdAndEstado(plan.getId(), "confirmado");
+
+        // El usuario esta apuntado al plan?
+        boolean esMiembro = participacionRepository.existsByIdUsuarioIdAndIdPlanId(userId, plan.getId());
+
+        // El usuario es el creador del plan?
+        boolean esCreador = plan.getCreador() != null && plan.getCreador().getId().equals(userId);
+
+        // Puntuacion media del creador
+
+        // Nombre del anfitrion: alias si tiene, si no nombre real
+        String nombreAnfitrion = null;
+        if (plan.getCreador() != null) {
+            nombreAnfitrion = plan.getCreador().getNombreUsuario() != null
+                    ? plan.getCreador().getNombreUsuario()
+                    : plan.getCreador().getNombre();
+        }
 
         return PlanDto.builder()
-                .id(p.getId())
-                .titulo(p.getTitulo())
-                .descripcion(p.getDescripcion())
-                .categoria(p.getCategoria() != null ? p.getCategoria().getTipo() : null)
-                .fechaEvento(p.getFechaEvento())
-                .horaEvento(p.getHoraEvento())
-                .ubicacionTexto(p.getUbicacionTexto())
-                .edadMin(p.getEdadMin())
-                .edadMax(p.getEdadMax())
-                .numMaxPersonas(p.getNumMaxPersonas())
-                .idioma(p.getIdioma())
-                .anfitrionNombre(p.getCreador() != null ? p.getCreador().getNombre() : null)
-                .anfitrionId(p.getCreador() != null ? p.getCreador().getId() : null)
-                .numParticipantes(participacionRepository.countByIdPlanIdAndEstado(p.getId(), "confirmado"))
-                .numApuntados(participacionRepository.countByIdPlanId(p.getId()))
+                .id(plan.getId())
+                .titulo(plan.getTitulo())
+                .descripcion(plan.getDescripcion())
+                .fechaEvento(plan.getFechaEvento() != null ? plan.getFechaEvento().toString() : null)
+                .horaEvento(plan.getHoraEvento() != null ? plan.getHoraEvento().format(DateTimeFormatter.ofPattern("HH:mm:ss")) : null)
+                .horaHasta(plan.getHoraHasta() != null ? plan.getHoraHasta().format(DateTimeFormatter.ofPattern("HH:mm:ss")) : null)
+                .ubicacionTexto(plan.getUbicacionTexto())
+                .latitud(plan.getLatitud())
+                .longitud(plan.getLongitud())
+                .edadMin(plan.getEdadMin())
+                .edadMax(plan.getEdadMax())
+                .numMaxPersonas(plan.getNumMaxPersonas())
+                .idioma(plan.getIdioma())
+                .fotoPlanUrl(plan.getFotoPlanUrl())
+                .categoria(plan.getCategoria() != null ? plan.getCategoria().getTipo() : null)
+                .anfitrionId(plan.getCreador() != null ? plan.getCreador().getId() : null)
+                .anfitrionNombre(nombreAnfitrion)
+                .numParticipantes(numParticipantes)
+                .numApuntados(numParticipantes)
                 .miembro(esMiembro)
                 .creador(esCreador)
-                .pendiente(esP
+                .build();
+    }
+
+    // Convierte "yyyy-MM-dd" a LocalDate; devuelve null si el valor es vacio o invalido
+    private LocalDate parseFecha(String s) {
+        if (s == null || s.isBlank()) return null;
+        try { return LocalDate.parse(s); } catch (Exception e) { return null; }
+    }
+
+    // Convierte "HH:mm" o "HH:mm:ss" a LocalTime; devuelve null si el valor es vacio o invalido
+    private LocalTime parseHora(String s) {
+        if (s == null || s.isBlank()) return null;
+        try {
+            String valor = s.length() > 5 ? s.substring(0, 5) : s;
+            return LocalTime.parse(valor, DateTimeFormatter.ofPattern("HH:mm"));
+        } catch (Exception e) { return null; }
+    }
+}

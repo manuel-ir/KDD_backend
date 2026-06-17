@@ -2,6 +2,10 @@ package com.kdd.kdd_backend.dto;
 
 import lombok.*;
 
+/**
+ * DTO con los datos de un mensaje para enviar al cliente.
+ * Incluye los ids de emisor y receptor, el contenido y la fecha de envio.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

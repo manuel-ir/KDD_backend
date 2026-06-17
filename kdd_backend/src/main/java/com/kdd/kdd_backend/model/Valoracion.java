@@ -3,6 +3,15 @@ package com.kdd.kdd_backend.model;
 import jakarta.persistence.*;
 import lombok.*;
 
+/**
+ * Entidad que representa la valoracion de un usuario a otro en un plan concreto.
+ *
+ * Mapea la tabla "valoraciones". La clave primaria es ternaria:
+ * (id_valorador, id_valorado, id_plan), implementada en ValoracionId.
+ *
+ * Un usuario solo puede valorar a otro una vez por plan,
+ * y ambos deben haber confirmado su presencia (campo presente=true).
+ */
 @Entity
 @Table(name = "valoraciones")
 @Data

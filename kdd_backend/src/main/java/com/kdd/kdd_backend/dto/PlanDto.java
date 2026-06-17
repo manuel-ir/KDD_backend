@@ -1,9 +1,14 @@
 package com.kdd.kdd_backend.dto;
 
 import lombok.*;
-import java.time.LocalDate;
-import java.time.LocalTime;
 
+/**
+ * DTO con los datos de un plan para enviar al cliente.
+ *
+ * Incluye informacion calculada dinamicamente: si el usuario autenticado
+ * es miembro del plan (miembro), si es el creador (creador), el numero
+ * de participantes y el aforo maximo.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -13,8 +18,9 @@ public class PlanDto {
     private String titulo;
     private String descripcion;
     private String categoria;
-    private LocalDate fechaEvento;
-    private LocalTime horaEvento;
+    private String fechaEvento;
+    private String horaEvento;
+    private String horaHasta;
     private String ubicacionTexto;
     private Integer edadMin;
     private Integer edadMax;
@@ -22,6 +28,9 @@ public class PlanDto {
     private String idioma;
     private String anfitrionNombre;
     private Long anfitrionId;
+    private Double latitud;
+    private Double longitud;
+    private String fotoPlanUrl;
     private int numParticipantes;
     private int numApuntados;
     private boolean miembro;

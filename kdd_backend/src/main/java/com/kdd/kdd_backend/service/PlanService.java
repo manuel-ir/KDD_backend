@@ -77,6 +77,7 @@ public class PlanService {
         return toDto(plan, userId);
     }
 
+    @Transactional
     public PlanDto crearPlan(Long userId, CrearPlanDto dto) {
         Usuario creador = usuarioRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));

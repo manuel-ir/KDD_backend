@@ -13,4 +13,5 @@ build_docs.py
 
 # IntelliJ
 .idea/
-.gradle/
+.gradle/estructura_exposicion.md
+guia_tecnica_kdd.md

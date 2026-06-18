@@ -74,7 +74,7 @@ public class TriggerInitializer {
                 edad_max_plan INT;
                 creador_plan BIGINT;
             BEGIN
-                SELECT creador_id INTO creador_plan FROM planes WHERE id_plan = NEW.id_plan;
+                SELECT id_creador INTO creador_plan FROM planes WHERE id_plan = NEW.id_plan;
                 IF NEW.id_usuario = creador_plan THEN
                     RETURN NEW;
                 END IF;
@@ -116,7 +116,7 @@ public class TriggerInitializer {
                 edad_max_com INT;
                 admin_com BIGINT;
             BEGIN
-                SELECT admin_id INTO admin_com FROM comunidades WHERE id_comunidad = NEW.id_comunidad;
+                SELECT id_admin INTO admin_com FROM comunidades WHERE id_comunidad = NEW.id_comunidad;
                 IF NEW.id_usuario = admin_com THEN
                     RETURN NEW;
                 END IF;

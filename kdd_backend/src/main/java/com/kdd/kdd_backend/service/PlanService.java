@@ -15,6 +15,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.Period;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -35,6 +36,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PlanService {
 
+    private static final ZoneId ZONA = ZoneId.of("Europe/Madrid");
+
     private final PlanRepository planRepository;
     private final UsuarioRepository usuarioRepository;
     private final CategoriaRepository categoriaRepository;
@@ -52,7 +55,7 @@ public class PlanService {
      */
     private boolean planHaCaducado(Plan p) {
         if (p.getFechaEvento() == null) return false;
-        LocalDateTime ahora = LocalDateTime.now();
+        LocalDateTime ahora = LocalDateTime.now(ZONA);
         if (p.getHoraHasta() != null) {
             LocalDateTime fin = LocalDateTime.of(p.getFechaEvento(), p.getHoraHasta());
             return ahora.isAfter(fin);
@@ -193,7 +196,7 @@ public class PlanService {
                 .orElseThrow(() -> new RuntimeException("Plan no encontrado"));
 
         if (usuario.getFechaNacimiento() != null && (plan.getEdadMin() != null || plan.getEdadMax() != null)) {
-            int edad = Period.between(usuario.getFechaNacimiento(), LocalDate.now()).getYears();
+            int edad = Period.between(usuario.getFechaNacimiento(), LocalDate.now(ZONA)).getYears();
             if (plan.getEdadMin() != null && edad < plan.getEdadMin()) {
                 throw new RuntimeException("No cumples la edad mínima de este plan (" + plan.getEdadMin() + " años)");
             }
@@ -257,7 +260,7 @@ public class PlanService {
         if (plan.getFechaEvento() == null) {
             planHaComenzado = true;
         } else {
-            LocalDate hoy = LocalDate.now();
+            LocalDate hoy = LocalDate.now(ZONA);
             LocalDate fechaPlan = plan.getFechaEvento();
             if (fechaPlan.isBefore(hoy)) {
                 planHaComenzado = true;
@@ -265,7 +268,7 @@ public class PlanService {
                 planHaComenzado = false;
             } else {
                 if (plan.getHoraEvento() != null) {
-                    planHaComenzado = !LocalTime.now().isBefore(plan.getHoraEvento());
+                    planHaComenzado = !LocalTime.now(ZONA).isBefore(plan.getHoraEvento());
                 } else {
                     planHaComenzado = true;
                 }
